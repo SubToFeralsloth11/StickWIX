@@ -1,0 +1,176 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>StickWIX · Build log</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='3' y='3' width='26' height='26' rx='7' fill='%23ff7a59' transform='rotate(-6 16 16)'/%3E%3Cpath d='M10 20l4-9 3 6 2-3 3 6' stroke='%2315131c' stroke-width='2.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<style>
+:root{--bg:#15131c;--bg2:#1c1a26;--card:#211e2d;--card2:#2a2639;--line:#36314a;--ink:#f4efe6;--mut:#9a93ad;
+ --clay:#ff7a59;--mint:#5fe0b0;--sun:#ffd166;--sky:#7cc4ff;--rose:#ff5d8f;--shadow:#0b0a10}
+*{box-sizing:border-box}html{background:var(--bg)}
+body{margin:0;color:var(--ink);font:15px/1.5 ui-rounded,"SF Pro Rounded",system-ui,-apple-system,"Segoe UI",sans-serif;min-height:100vh;
+ background:radial-gradient(circle at 1px 1px,#ffffff0d 1px,transparent 1.5px) 0 0/24px 24px,
+ radial-gradient(900px 420px at 85% -120px,#ff7a5922,transparent 70%),radial-gradient(700px 380px at -5% 10%,#5fe0b014,transparent 70%),var(--bg)}
+.wrap{max-width:1320px;margin:0 auto;padding:30px 32px 56px}
+.mono,b.num{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-variant-numeric:tabular-nums}
+header{display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:16px}
+.logo{width:58px;height:58px;flex:none}
+h1{margin:0;font-size:30px;line-height:1;font-weight:800;letter-spacing:-.02em}
+h1 em{font-style:normal;color:var(--clay)}
+.sub{color:var(--mut);font-size:13px;margin-top:6px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:99px;background:var(--card2);border:1px solid var(--line);font-size:12px;color:var(--ink)}
+.chip i{width:7px;height:7px;border-radius:50%;background:var(--mut)}
+.chip.on i{background:var(--mint);box-shadow:0 0 0 0 #5fe0b088;animation:ping 1.8s infinite}
+.chip.warn i{background:var(--sun)}
+@keyframes ping{70%{box-shadow:0 0 0 7px #5fe0b000}100%{box-shadow:0 0 0 0 #5fe0b000}}
+/* timer: a sticker peeled onto the page */
+.timer{position:relative;background:var(--card);border:2px solid var(--ink);border-radius:16px;padding:12px 20px 12px 18px;
+ box-shadow:5px 5px 0 var(--shadow);transform:rotate(-1.2deg);min-width:300px;transition:border-color .3s}
+.timer .state{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase}
+.timer .state .dot{width:10px;height:10px;border-radius:3px;background:var(--mint);animation:blink 1.2s steps(2) infinite}
+.timer b{display:block;font-size:40px;line-height:1.05;font-weight:800;letter-spacing:-.01em}
+.timer small{display:block;color:var(--mut);font-size:12px}
+.timer.paused{border-color:var(--mut)}.timer.paused b{color:var(--mut)}
+.timer.paused .state{color:var(--sun)}.timer.paused .state .dot{background:none;width:10px;animation:none;
+ border-left:3px solid var(--sun);border-right:3px solid var(--sun);border-radius:0}
+.timer.fin{border-color:var(--mint)}.timer.fin b{color:var(--mint)}.timer.fin .state{color:var(--mint)}.timer.fin .state .dot{animation:none}
+@keyframes blink{50%{opacity:.25}}
+.timer:after{content:"";position:absolute;right:-2px;top:-2px;width:22px;height:22px;background:linear-gradient(225deg,var(--bg) 50%,var(--card2) 50%);border-radius:0 14px 0 6px}
+main{display:grid;grid-template-columns:1.4fr 1fr;gap:20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px;box-shadow:0 10px 30px -18px #000}
+.full{grid-column:1/-1}
+h2{margin:0 0 14px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--mut);font-weight:800;display:flex;justify-content:space-between;gap:10px}
+h2 span{letter-spacing:0;text-transform:none;font-weight:600}
+.hero{display:grid;grid-template-columns:200px 1fr;gap:28px;align-items:start}
+.pct{font-size:84px;font-weight:900;line-height:.9;letter-spacing:-.05em}
+.pct sup{font-size:30px;color:var(--clay);letter-spacing:0;vertical-align:top;margin-left:2px}
+.pct small{display:block;font-size:13px;font-weight:600;color:var(--mut);letter-spacing:0;margin-top:10px}
+/* every task is one tile in a little level map */
+.map{display:grid;grid-template-columns:repeat(auto-fill,minmax(14px,1fr));gap:3px;margin-bottom:16px}
+.map i{aspect-ratio:1;border-radius:3px;background:var(--card2);border:1px solid var(--line);cursor:default;position:relative}
+.map i.done{background:var(--mint);border-color:#3fb98d;box-shadow:inset 0 -3px 0 #2c9e76}
+.map i.active{background:var(--sun);border-color:#d9a93a;animation:bob 1s ease-in-out infinite}
+.map i.blocked{background:repeating-linear-gradient(45deg,var(--rose) 0 3px,transparent 3px 6px);border-color:var(--rose)}
+.map i.ph{grid-column:span 1;background:none;border:none;color:var(--mut);font-size:9px;line-height:14px;text-align:center}
+@keyframes bob{50%{transform:translateY(-3px)}}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.stat{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px 13px}
+.stat span{display:block;font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.stat b{font-size:20px;font-weight:800}
+.now{margin-top:16px;display:flex;gap:12px;align-items:flex-start;background:var(--bg2);border:1px dashed var(--line);border-radius:12px;padding:11px 14px;font-size:14px}
+.now .tag{flex:none;font-size:11px;font-weight:900;letter-spacing:.1em;background:var(--clay);color:var(--bg);border-radius:6px;padding:2px 7px;transform:rotate(-3deg);margin-top:1px}
+.now.paused .tag{background:var(--sun)}
+.notes{margin:12px 0 0;padding:0;list-style:none;font-size:13.5px;color:var(--mut)}
+.notes li{padding:4px 0 4px 18px;position:relative}.notes li:before{content:"";position:absolute;left:2px;top:11px;width:7px;height:7px;border-radius:2px;background:var(--clay);transform:rotate(45deg)}
+.notes li:first-child{color:var(--ink)}
+.shots{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.shots figure{margin:0;border-radius:12px;overflow:hidden;background:var(--bg2);border:1px solid var(--line);cursor:zoom-in}
+.shots figure:first-child{grid-column:span 2;grid-row:span 2}
+.shots img{width:100%;aspect-ratio:16/10;object-fit:cover;display:block}
+.shots figure:first-child img{aspect-ratio:auto;height:calc(100% - 30px)}
+.shots figcaption{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--mut);padding:6px 10px}
+.empty{color:var(--mut);font-size:14px;padding:30px 20px;text-align:center;border:2px dashed var(--line);border-radius:12px}
+.log{list-style:none;margin:0;padding:0;max-height:440px;overflow:auto}
+.log li{display:grid;grid-template-columns:52px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.log li:last-child{border:0}.log time{color:var(--mut);font-size:12px;padding-top:1px}
+.log code{font:700 11px ui-monospace,Menlo,monospace;color:var(--sky);margin-right:7px}
+.phase{border:1px solid var(--line);border-radius:14px;margin-bottom:10px;background:var(--bg2);overflow:hidden}
+.phase summary{list-style:none;cursor:pointer;display:grid;grid-template-columns:1fr 220px 70px;gap:16px;align-items:center;padding:12px 16px}
+.phase summary::-webkit-details-marker{display:none}
+.phase h3{margin:0;font-size:15px;font-weight:700;display:flex;gap:10px;align-items:center}
+.phase h3:before{content:"";width:8px;height:8px;border-right:2.5px solid var(--mut);border-bottom:2.5px solid var(--mut);transform:rotate(-45deg);transition:transform .2s;flex:none}
+.phase[open] h3:before{transform:rotate(45deg)}
+.phase.complete h3{color:var(--mint)}
+.bar{height:12px;border-radius:99px;background:var(--card2);overflow:hidden;border:1px solid var(--line)}
+.bar div{height:100%;background:linear-gradient(90deg,var(--clay),var(--sun));border-radius:99px;transition:width .8s}
+.phase.complete .bar div{background:var(--mint)}
+.n{text-align:right;color:var(--mut);font:700 13px ui-monospace,Menlo,monospace}
+ul.ck{list-style:none;margin:0;padding:4px 16px 14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:2px 26px}
+ul.ck li{display:flex;gap:10px;font-size:13px;color:var(--mut);padding:4px 0;align-items:flex-start}
+ul.ck li:before{content:"";flex:0 0 15px;height:15px;margin-top:2px;border-radius:4px;border:2px solid var(--line)}
+ul.ck li em{font:700 11px ui-monospace,Menlo,monospace;color:var(--mut);flex:0 0 36px;padding-top:2px;font-style:normal}
+ul.ck li.done{color:var(--ink)}ul.ck li.done:before{background:var(--mint);border-color:var(--mint);box-shadow:inset 0 0 0 2px var(--bg2)}
+ul.ck li.active{color:var(--sun)}ul.ck li.active:before{border-color:var(--sun);background:radial-gradient(circle,var(--sun) 35%,transparent 40%)}
+ul.ck li.blocked{color:var(--rose)}ul.ck li.blocked:before{border-color:var(--rose)}
+ul.ck li .why{margin-left:auto;font-size:11px;color:var(--rose);white-space:nowrap;padding-left:8px}
+ul.ck li .us{font:700 10px ui-monospace,Menlo,monospace;color:var(--bg);background:var(--sky);border-radius:4px;padding:0 4px;margin-top:3px;flex:none}
+#zoom{position:fixed;inset:0;background:#0b0a10e6;display:none;align-items:center;justify-content:center;z-index:9;cursor:zoom-out}
+#zoom img{max-width:94vw;max-height:94vh;border-radius:10px;border:2px solid var(--ink)}
+footer{color:var(--mut);font-size:12px;margin-top:22px;text-align:center}
+@media(max-width:980px){main{grid-template-columns:1fr}.hero{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}ul.ck{grid-template-columns:1fr}.phase summary{grid-template-columns:1fr 100px 56px}}
+</style></head><body><div class="wrap">
+<header>
+ <div class="brand">
+  <svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><rect x="6" y="6" width="52" height="52" rx="14" fill="#ff7a59" stroke="#f4efe6" stroke-width="3" transform="rotate(-6 32 32)"/>
+   <path d="M18 42l9-18 6 12 4-6 8 12" stroke="#15131c" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="44" cy="22" r="4.5" fill="#ffd166" stroke="#15131c" stroke-width="2.5"/></svg>
+  <div><h1>Stick<em>WIX</em> build log</h1>
+   <div class="sub"><span>No-code 2D game engine · React + PixiJS + TypeScript</span><span class="chip" id="branch">branch –</span><span class="chip" id="live"><i></i><span id="upd">waiting for data…</span></span></div></div>
+ </div>
+ <div class="timer paused" id="timerBox"><div class="state"><span class="dot"></span><span id="timerState">Paused</span></div><b class="num" id="timer">0:00:00</b><small id="timerSub">counts only while the agent is working</small></div>
+</header>
+<main>
+ <section class="card full">
+  <div class="hero">
+   <div class="pct" id="pct">–<small>of tasks done</small></div>
+   <div><div class="map" id="map"></div>
+    <div class="stats">
+     <div class="stat"><span>Tasks</span><b class="num" id="tasks">–</b></div>
+     <div class="stat"><span>Worked</span><b class="num" id="worked">–</b></div>
+     <div class="stat"><span>Pace</span><b class="num" id="pace">–</b></div>
+     <div class="stat"><span>Work left</span><b class="num" id="left">–</b></div>
+     <div class="stat"><span>Sessions</span><b class="num" id="sess">–</b></div>
+    </div></div>
+  </div>
+  <div class="now" id="now"><span class="tag" id="nowTag">NOW</span><span id="nowText">–</span></div>
+  <ul class="notes" id="notes"></ul>
+ </section>
+ <section class="card"><h2>Screenshots <span id="shotN"></span></h2><div id="shots"></div></section>
+ <section class="card"><h2>Commits <span id="commitN"></span></h2><ul class="log" id="log"></ul></section>
+ <section class="card full"><h2>Checklist <span>tasks.md · click a phase to fold</span></h2><div id="phases"></div></section>
+</main>
+<footer>Refreshes every 5 s · the timer pauses automatically when the agent stops, goes quiet for 10 min (the quiet stretch is not counted), or the updater is not running.</footer>
+</div>
+<div id="zoom" onclick="this.style.display='none'"><img id="zimg" alt=""></div>
+<script>
+const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const STALE=30;
+function hm(min){min=Math.max(0,min);if(min<60)return Math.round(min)+"m";const h=Math.floor(min/60),m=Math.round(min%60);return h<24?`${h}h ${m}m`:`${Math.floor(h/24)}d ${h%24}h`}
+function clock(sec){sec=Math.max(0,Math.floor(sec));const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60,p=x=>String(x).padStart(2,"0");return `${h}:${p(m)}:${p(s)}`}
+function ago(t){const s=Date.now()/1000-t;if(s<60)return"now";if(s<3600)return Math.floor(s/60)+"m";if(s<86400)return Math.floor(s/3600)+"h";return Math.floor(s/86400)+"d"}
+/* The timer only runs while the updater reports the agent working AND its data is fresh;
+   otherwise it freezes at the accumulated working time. */
+function mode(S){if(S.finished)return"fin";if(Date.now()/1000-S.updated>STALE)return"stale";return S.working?"on":"idle"}
+function tick(){const S=window.STATUS;if(!S)return;const md=mode(S),now=Date.now()/1000;
+ const extra=md=="on"?Math.min(now-S.updated,STALE):0;
+ $("timer").textContent=clock(S.worked_sec+extra);
+ const box=$("timerBox");box.classList.toggle("paused",md=="idle"||md=="stale");box.classList.toggle("fin",md=="fin");
+ $("timerState").textContent={on:"Agent working",idle:"Paused · agent not working",stale:"Paused · updater offline",fin:"Finished"}[md];
+ $("timerSub").textContent=md=="fin"?"total time the agent spent building":md=="on"?"live · counts only working time":
+  "last activity "+(S.last_activity?(ago(S.last_activity)=="now"?"just now":ago(S.last_activity)+" ago"):"–")+" · resumes when work does";
+ const live=$("live");live.className="chip "+(md=="on"?"on":md=="fin"?"":"warn");
+ $("upd").textContent=(md=="stale"?"no data since ":"updated ")+new Date(S.updated*1000).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+ $("now").classList.toggle("paused",md!="on");$("nowTag").textContent=md=="on"?"NOW":md=="fin"?"DONE":"LAST";
+}
+window.renderStatus=function(){const S=window.STATUS;if(!S)return;
+ const p=S.total?Math.floor(S.done/S.total*100):0;
+ $("pct").innerHTML=`${p}<sup>%</sup><small>of ${S.total} tasks done${S.blocked?` · ${S.blocked} blocked`:""}</small>`;
+ $("map").innerHTML=S.phases.map((ph,k)=>`<i class="ph" title="${esc(ph.name)}">${k+1}</i>`+ph.items.map(i=>`<i class="${i.state}" title="${esc(i.id+" · "+i.name)}"></i>`).join("")).join("");
+ $("tasks").textContent=`${S.done}/${S.total}`;$("worked").textContent=hm(S.worked_sec/60);
+ $("pace").textContent=S.estimate.per_task_min+"m/task";
+ $("left").textContent=S.finished?"done":"~"+hm(S.estimate.left_min);$("sess").textContent=S.sessions;
+ $("nowText").textContent=S.current||"–";$("branch").textContent=S.branch?"⎇ "+S.branch:"no branch";
+ $("notes").innerHTML=(S.notes||[]).map(n=>`<li>${esc(n)}</li>`).join("");
+ $("shotN").textContent=S.shots.length?S.shots.length+" latest":"";
+ $("shots").innerHTML=S.shots.length?`<div class="shots">${S.shots.map(s=>`<figure data-src="${esc(s.src)}"><img src="${esc(s.src)}" alt="${esc(s.caption)}" loading="lazy"><figcaption><span>${esc(s.caption)}</span><span>${ago(s.time)}</span></figcaption></figure>`).join("")}</div>`
+  :`<div class="empty">Screenshots of the editor and games land here as soon as there's something to look at.</div>`;
+ $("commitN").textContent=S.commits.length?S.commits.length+" latest":"";
+ $("log").innerHTML=S.commits.map(c=>`<li><time>${ago(c.time)}</time><div><code>${esc(c.hash)}</code>${esc(c.msg)}</div></li>`).join("")||`<li><time></time><div>No commits yet.</div></li>`;
+ const open=new Set([...document.querySelectorAll("#phases details[open]")].map(d=>d.dataset.k)),first=!$("phases").children.length;
+ $("phases").innerHTML=S.phases.map(ph=>{const d=ph.items.filter(i=>i.state=="done").length,n=ph.items.length,q=n?Math.round(d/n*100):0,
+  isOpen=open.has(ph.name)||(first&&d<n&&ph.items.some(i=>i.state!="open"||ph===S.phases.find(x=>x.items.some(y=>y.state!="done"))));
+  return `<details class="phase ${d==n?"complete":""}" data-k="${esc(ph.name)}" ${isOpen?"open":""}><summary><h3>${esc(ph.name)}</h3><div class="bar"><div style="width:${q}%"></div></div><div class="n">${d}/${n}</div></summary>
+  <ul class="ck">${ph.items.map(i=>`<li class="${i.state}"><em>${esc(i.id)}</em>${i.story?`<span class="us">${esc(i.story)}</span>`:""}<span>${esc(i.name)}</span>${i.state=="blocked"?`<span class="why">${esc(i.why||"blocked")}</span>`:""}</li>`).join("")}</ul></details>`}).join("");
+ tick();
+};
+$("shots").addEventListener("click",e=>{const f=e.target.closest("figure");if(f){$("zimg").src=f.dataset.src;$("zoom").style.display="flex"}});
+function load(){const s=document.createElement("script");s.src="progress/status.js?"+Date.now();s.onload=s.onerror=()=>s.remove();document.head.appendChild(s)}
+load();setInterval(load,5000);setInterval(tick,1000);
+</script></body></html>
