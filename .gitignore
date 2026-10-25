@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.local/
+test-results/
+playwright-report/
+*.tsbuildinfo
+.DS_Store
+progress/clock.json
+progress/status.js
+progress/*.tmp
+progress/updater.log
