@@ -5,7 +5,7 @@ import { runAction } from './actions';
 import { checkConditions } from './conditions';
 import { evalNum, type Binding, type RuleHost } from './host';
 import { Scheduler } from './scheduler';
-import { bindsSelf, matchTrigger, triggerTypesFor } from './triggers';
+import { matchTrigger, triggerTypesFor } from './triggers';
 
 /** Nested trigger dispatches allowed within one moment before a chain is cut (FR-022). */
 export const MAX_DEPTH = 64;
@@ -64,10 +64,18 @@ export class Interpreter {
     }, live.order);
   }
 
-  /** Bindings to run a rule with; Kind rules without a subject run once per object of the Kind. */
+  /**
+   * Bindings to run a rule with. A Kind rule binds "this object" to the
+   * trigger's subject of its own Kind (once per event, FR-019); only when the
+   * event has no such subject (keys, timers, game values, other Kinds) does it
+   * run once for every object of the Kind.
+   */
   private bindingsFor(live: Live, b: Binding | null): Binding[] {
-    if (live.owner.type !== 'kind' || (b && b.self) || (b && bindsSelf(live.rule.trigger, this.host))) return [b ?? { that: new Map() }];
-    return this.host.world.byKind(live.owner.id!).map((i) => ({ self: i.id, that: new Map(b?.that ?? []) }));
+    if (live.owner.type !== 'kind' || b?.self) return [b ?? { that: new Map() }];
+    const kindId = live.owner.id!;
+    const own = b?.subjects?.find((id) => this.host.world.instances.get(id)?.kindId === kindId);
+    if (own) return [{ ...b!, self: own }];
+    return this.host.world.byKind(kindId).map((i) => ({ self: i.id, that: new Map(b?.that ?? []), subjects: b?.subjects }));
   }
 
   /** Feeds an event to every matching rule, depth-first. */

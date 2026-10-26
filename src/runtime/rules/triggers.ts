@@ -30,25 +30,30 @@ export function triggerTypesFor(e: RuntimeEvent): TriggerType[] {
 
 /**
  * Does trigger-side target `t` accept instance `inst`? Records bindings:
- * "any Coin" binds "that Coin"; "this object" binds self for Kind rules.
+ * "any Coin" binds "that Coin"; "this object" binds self for Kind rules;
+ * every accepted instance is noted as a subject of the trigger.
  */
 function accepts(t: Target, inst: Instance, ownerKind: string | undefined, b: Binding): boolean {
+  let ok: boolean;
   switch (t.t) {
     case 'object':
-      return inst.id === t.id;
+      ok = inst.id === t.id;
+      break;
     case 'any':
     case 'that':
-      if (inst.kindId !== t.kindId) return false;
-      b.that.set(t.kindId, inst.id);
-      return true;
+      ok = inst.kindId === t.kindId;
+      if (ok) b.that.set(t.kindId, inst.id);
+      break;
     case 'self':
-      if (!ownerKind || inst.kindId !== ownerKind) return false;
-      b.self = inst.id;
-      return true;
+      ok = !!ownerKind && inst.kindId === ownerKind;
+      if (ok) b.self = inst.id;
+      break;
     case 'ui':
     case 'unset':
-      return false;
+      ok = false;
   }
+  if (ok) (b.subjects ??= []).push(inst.id);
+  return ok;
 }
 
 function fresh(): Binding {
@@ -101,7 +106,11 @@ export function matchTrigger(
         } else if (ownerKind) {
           if (inst.kindId !== ownerKind) return null;
           b.self = inst.id;
-        } else b.that.set(inst.kindId, inst.id);
+          b.subjects = [inst.id];
+        } else {
+          b.that.set(inst.kindId, inst.id);
+          b.subjects = [inst.id];
+        }
       }
       if (trigger.type === 'valueChanges') return b;
       const target = evalNum(trigger.amount, b, host);
@@ -121,29 +130,5 @@ export function matchTrigger(
     case 'every':
     case 'after':
       return null;
-  }
-}
-
-/**
- * Whether matching binds "this object". When it does not (keys, timers, game
- * values ...), Kind rules run once per object of their Kind.
- */
-export function bindsSelf(trigger: Trigger, host: RuleHost): boolean {
-  const uses = (t: Target) => t.t === 'self';
-  switch (trigger.type) {
-    case 'clicked':
-    case 'created':
-    case 'destroyed':
-    case 'leavesScene':
-    case 'sticker':
-      return uses(trigger.target);
-    case 'touches':
-      return uses(trigger.a) || uses(trigger.b);
-    case 'valueChanges':
-    case 'valueReaches':
-      if ('unset' in trigger.value) return false;
-      return trigger.value.of ? uses(trigger.value.of) : host.values.isObjectValue(trigger.value.valueId);
-    default:
-      return false;
   }
 }

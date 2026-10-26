@@ -47,6 +47,31 @@ describe('rule interpreter', () => {
       expect(g.scene.world.get('far')!.x).toBe(405);
       expect(g.values.get('score')).toBe(2);
     });
+
+    it('a Kind rule about "any" object of its own Kind runs once, for the object involved', () => {
+      const { game: g } = game(spec([], [rule('k', { type: 'clicked', target: any('coin') }, [{ type: 'hide', target: self }, add('score')])]));
+      g.input.mouseDown(410, 410);
+      g.run(1);
+      expect(g.values.get('score')).toBe(1);
+      expect(g.scene.world.get('far')!.hidden).toBe(true);
+      expect(g.scene.world.get('near')!.hidden).toBe(false);
+    });
+
+    it('a touch owned by the touched Kind binds "this object" to the touched one', () => {
+      const { game: g } = game(spec([], [rule('k', { type: 'touches', a: any('hero'), b: any('coin') }, [{ type: 'hide', target: self }, add('score')])]));
+      g.input.keyDown('ArrowRight');
+      g.run(20);
+      expect(g.values.get('score')).toBe(1);
+      expect(g.scene.world.get('near')!.hidden).toBe(true);
+      expect(g.scene.world.get('far')!.hidden).toBe(false);
+    });
+
+    it('a Kind rule whose trigger is about another Kind still runs for each of its own objects', () => {
+      const { game: g } = game(spec([], [rule('k', { type: 'clicked', target: obj('h') }, [add('score')])]));
+      g.input.mouseDown(110, 110);
+      g.run(1);
+      expect(g.values.get('score')).toBe(2);
+    });
   });
 
   it('runs game → scene → Kind rules, each in list order (FR-021)', () => {

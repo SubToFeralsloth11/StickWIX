@@ -24,10 +24,12 @@ export interface RuleHost {
   diagnostic(d: Diagnostic): void;
 }
 
-/** Instances a trigger bound: "this object" and "that [Kind]". */
+/** Instances a trigger bound: "this object", "that [Kind]", and every object the event was about. */
 export interface Binding {
   self?: string;
   that: Map<string, string>;
+  /** Instance ids the trigger matched (a Kind-owned rule binds "this object" to the one of its Kind). */
+  subjects?: string[];
 }
 
 export const emptyBinding = (): Binding => ({ that: new Map() });
