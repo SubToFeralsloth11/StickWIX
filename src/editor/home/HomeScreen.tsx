@@ -4,6 +4,7 @@ import { openProject } from '../App';
 import { Logo } from '../Logo';
 import { toast } from '../toast';
 import { NewProjectDialog } from './NewProjectDialog';
+import { ImportButton } from './ImportExport';
 import { ConfirmDialog } from '../ConfirmDialog';
 
 function when(iso: string) {
@@ -47,6 +48,7 @@ export function HomeScreen() {
             </div>
           </div>
           <div className="row">
+            <ImportButton onImported={openProject} />
             <button className="btn primary" onClick={() => setCreating(true)} data-tour="new-project">
               ＋ New game
             </button>

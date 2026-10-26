@@ -33,7 +33,7 @@ async function exported() {
 }
 
 function deps() {
-  const renderers: NullRenderer[] = [];
+  const renderers: (NullRenderer & { canvas: HTMLCanvasElement })[] = [];
   const unlock = vi.fn();
   const started: HTMLElement[] = [];
   const d: PlayerDeps = {
