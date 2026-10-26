@@ -9,6 +9,8 @@ export interface PixiRendererOptions {
   /** URL for an asset id (builtin path, blob: or data: URL); undefined = missing. */
   textureUrl: (assetId: string) => string | undefined;
   assetInfo: AssetInfo;
+  /** Called when an image finishes loading (views that only redraw on change use it). */
+  onTextureLoad?: () => void;
 }
 
 const FONTS: Record<UIElement['style']['font'], { family: string; weight: TextStyleFontWeight }> = {
@@ -46,8 +48,12 @@ class TextureCache {
         const t = Texture.from(img);
         t.source.scaleMode = this.o.pixelArt ? 'nearest' : 'linear';
         this.base.set(id, t);
+        this.o.onTextureLoad?.();
       })
-      .catch(() => this.base.set(id, 'missing'));
+      .catch(() => {
+        this.base.set(id, 'missing');
+        this.o.onTextureLoad?.();
+      });
   }
 
   /** Whole image, or null while loading. */
@@ -151,6 +157,13 @@ export class PixiRenderer implements Renderer {
 
   get canvas(): HTMLCanvasElement {
     return this.app.canvas;
+  }
+
+  /** Changes the drawing size in game pixels (editor viewport resize / zoom). */
+  resize(w: number, h: number) {
+    if (this.destroyed) return;
+    this.app.renderer.resize(Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
+    this.bgKey = '';
   }
 
   render(v: GameView) {
