@@ -45,6 +45,16 @@ export interface Instance {
   pop: number;
   /** Projectile spawned by Shooter: removed when it hits something solid. */
   projectile: boolean;
+  /** Bounciness applied by physics when blocked (Bouncy sticker); 0 = none. */
+  bounce: number;
+  /** Seconds during which controllers ignore input (knockback). */
+  stun: number;
+  /** Result of the last physics move. */
+  blocked: { left: boolean; right: boolean; up: boolean; down: boolean };
+  /** Set by the Solid sticker: blocks bodies (one-way blocks only from above). */
+  solid: 'none' | 'solid' | 'oneWay';
+  /** Held by the mouse (Draggable): physics and gravity leave it alone. */
+  dragged: boolean;
 }
 
 export interface LiveSticker {
@@ -93,8 +103,12 @@ export interface WorldApi {
   /** Mouse position in scene coordinates. */
   mouseWorld(): { x: number; y: number };
   playSound(assetId: string | null): void;
-  /** The Kind that holds a controller sticker (default target for Collectible/Hurts/Chase). */
+  /** The Kinds that hold a controller sticker (default target for Collectible/Hurts/Chase). */
   controllerKindIds(): string[];
+  /** Topmost visible instance under a scene point. */
+  topmostAt(x: number, y: number): Instance | undefined;
+  /** Tile grid cell size (snap size for Draggable). */
+  cellSize(): number;
 }
 
 export interface StepCtx {
