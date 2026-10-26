@@ -4,6 +4,7 @@ import { WebAudio } from '@/runtime/audio';
 import { createGame, type Game } from '@/runtime/game';
 import { attachDomInput } from '@/runtime/input';
 import { PixiRenderer } from '@/runtime/render/pixi-renderer';
+import { attachFpsOverlay, fpsRequested } from '@/runtime/render/fps-overlay';
 import type { Library } from '../assets/library';
 import { editorStore } from '../store';
 import { setUI } from '../ui-state';
@@ -40,6 +41,7 @@ export function PlayView({ project, lib }: { project: Project; lib: Library }) {
     const sceneId = editorStore.getState().sceneId ?? snapshot.startSceneId;
     let g: Game | null = null;
     let detach = () => {};
+    let detachFps = () => {};
     let dead = false;
     const audio = new WebAudio((id) => lib.url(id));
     void PixiRenderer.create(box.current!, { screen: { w: W, h: H }, pixelArt: snapshot.settings.pixelArt, textureUrl: (id) => lib.url(id), assetInfo: lib.info }).then((renderer) => {
@@ -67,11 +69,13 @@ export function PlayView({ project, lib }: { project: Project; lib: Library }) {
       g.start();
       // Dev builds only: lets end-to-end tests read values and objects of the running game.
       if (import.meta.env.DEV) Object.assign(window, { __stickwixGame: g });
+      if (fpsRequested()) detachFps = attachFpsOverlay(box.current!);
       setGame(g);
     });
     return () => {
       dead = true;
       detach();
+      detachFps();
       if (g) {
         setUI({ lastRun: [...g.diagnostics] });
         g.stop();
