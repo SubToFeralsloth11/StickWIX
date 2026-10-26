@@ -144,8 +144,8 @@ export class PixiRenderer implements Renderer {
       height: o.screen.h,
       background: '#000000',
       antialias: !o.pixelArt,
-      preference: 'webgl',
-      autoDensity: true,
+      // We size the canvas with CSS ourselves; autoDensity would overwrite that on every resize.
+      autoDensity: false,
       resolution: Math.min(2, globalThis.devicePixelRatio || 1),
     });
     r.textures = new TextureCache(o, r.app);
@@ -166,10 +166,10 @@ export class PixiRenderer implements Renderer {
     return this.app.canvas;
   }
 
-  /** Changes the drawing size in game pixels (editor viewport resize / zoom). */
+  /** Changes the drawing size in game pixels (editor viewport resize / zoom). Not rounded, so the CSS stretch scale is exact. */
   resize(w: number, h: number) {
     if (this.destroyed) return;
-    this.app.renderer.resize(Math.max(1, Math.round(w)), Math.max(1, Math.round(h)));
+    this.app.renderer.resize(Math.max(1, w), Math.max(1, h));
     this.bgKey = '';
   }
 

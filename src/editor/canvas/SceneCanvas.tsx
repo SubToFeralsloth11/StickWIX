@@ -49,6 +49,8 @@ export function SceneCanvas({ project, lib }: { project: Project; lib: Library }
   const [size, setSize] = useState({ w: 800, h: 600 });
   const [zoom, setZoom] = useState(1);
   const [cam, setCam] = useState({ x: -32, y: -32 });
+  /** The camera as drawn: the renderer snaps it to whole scene pixels, so overlays and hit-testing must too. */
+  const shownCam = useMemo(() => ({ x: Math.round(cam.x), y: Math.round(cam.y) }), [cam]);
   const [drag, setDrag] = useState<Drag | null>(null);
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [tick, setTick] = useState(0);
@@ -113,7 +115,7 @@ export function SceneCanvas({ project, lib }: { project: Project; lib: Library }
       scene,
       tileSet: project.tileSets.find((t) => t.id === scene.tileLayer.tileSetId),
       screen: { w: size.w / zoom, h: size.h / zoom },
-      camera: { x: cam.x, y: cam.y, offset: { x: 0, y: 0 } },
+      camera: { x: shownCam.x, y: shownCam.y, offset: { x: 0, y: 0 } },
       time: 0,
       instances,
       ui: [],
@@ -121,16 +123,16 @@ export function SceneCanvas({ project, lib }: { project: Project; lib: Library }
       frozen: false,
     };
     renderer.render(view);
-  }, [renderer, world, project, scene, cam, zoom, size, drag, cursor, grid, tick, playing]);
+  }, [renderer, world, project, scene, shownCam, zoom, size, drag, cursor, grid, tick, playing]);
 
   const toScene = useCallback(
     (clientX: number, clientY: number) => {
       const r = viewport.current!.getBoundingClientRect();
-      return { x: cam.x + (clientX - r.left) / zoom, y: cam.y + (clientY - r.top) / zoom };
+      return { x: shownCam.x + (clientX - r.left) / zoom, y: shownCam.y + (clientY - r.top) / zoom };
     },
-    [cam, zoom],
+    [shownCam, zoom],
   );
-  const toView = useCallback((x: number, y: number) => ({ x: (x - cam.x) * zoom, y: (y - cam.y) * zoom }), [cam, zoom]);
+  const toView = useCallback((x: number, y: number) => ({ x: (x - shownCam.x) * zoom, y: (y - shownCam.y) * zoom }), [shownCam, zoom]);
   const cellAt = (p: { x: number; y: number }) => ({ x: Math.floor(p.x / cell), y: Math.floor(p.y / cell) });
 
   // Tool keys + space-to-pan.
