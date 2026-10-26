@@ -84,7 +84,8 @@ export function makeLibrary(manifest: BuiltinManifest | null, project: Project |
       const m = manifest?.images[id] ?? manifest?.tilesets[id] ?? manifest?.sounds[id];
       return m ? BUILTIN_BASE + m.file : undefined;
     }
-    return project ? blobUrls[`${project.id}:${id}`] : undefined;
+    // Only assets still in the project: a deleted asset must show the placeholder, while undo can bring it back.
+    return project && own.has(id) ? blobUrls[`${project.id}:${id}`] : undefined;
   };
   const info: AssetInfo = (id) => {
     const b = manifest?.images[id];

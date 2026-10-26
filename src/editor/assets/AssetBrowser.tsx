@@ -5,6 +5,7 @@ import { DROP_HANDLERS } from '../canvas/drop';
 import { editorStore, useEditor } from '../store';
 import { setUI } from '../ui-state';
 import { ASSET_TOOLS } from './asset-tools';
+import { MyAssetActions } from './MyAssetActions';
 import './place';
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -26,6 +27,7 @@ export function AssetBrowser({ project, lib }: PanelProps) {
   const sceneId = useEditor((s) => s.sceneId);
   const images = useMemo(() => lib.images(), [lib]);
   const shown = images.filter((i) => (theme === 'all' || i.theme === theme || i.theme === 'any') && i.name.toLowerCase().includes(q.trim().toLowerCase()));
+  const mySounds = useMemo(() => lib.sounds().filter((s) => s.source !== 'builtin'), [lib]);
   const groups = ORDER.map((c) => [c, shown.filter((i) => i.category === c)] as const).filter(([, list]) => list.length);
 
   const placeCentre = (img: (typeof images)[number]) => {
@@ -84,24 +86,51 @@ export function AssetBrowser({ project, lib }: PanelProps) {
         <div className="section" key={cat}>
           <h4>{CATEGORY_LABEL[cat] ?? cat}</h4>
           <div className="grid">
-            {list.map((img) => (
-              <button
-                key={img.id}
-                className="tile-btn"
-                draggable
-                onDragStart={(e) => setDragPayload(e, { type: 'image', id: img.id, name: img.name, w: img.w, h: img.h })}
-                onDoubleClick={() => placeCentre(img)}
-                title={`${img.name} (${img.w}×${img.h}${img.frames > 1 ? `, ${img.frames} frames` : ''})`}
-                data-testid={`art-${img.id}`}
-              >
-                <FrameImg url={img.url} frames={img.frames} />
-                <span className="lbl">{img.name}</span>
-                {img.frames > 1 && <span className="badge">{img.frames}</span>}
-              </button>
-            ))}
+            {list.map((img) => {
+              const tile = (
+                <button
+                  key={img.id}
+                  className="tile-btn"
+                  draggable
+                  onDragStart={(e) => setDragPayload(e, { type: 'image', id: img.id, name: img.name, w: img.w, h: img.h })}
+                  onDoubleClick={() => placeCentre(img)}
+                  title={`${img.name} (${img.w}×${img.h}${img.frames > 1 ? `, ${img.frames} frames` : ''})`}
+                  data-testid={`art-${img.id}`}
+                >
+                  <FrameImg url={img.url} frames={img.frames} />
+                  <span className="lbl">{img.name}</span>
+                  {img.frames > 1 && <span className="badge">{img.frames}</span>}
+                </button>
+              );
+              if (img.source === 'builtin') return tile;
+              return (
+                <div key={img.id} style={{ position: 'relative' }}>
+                  {tile}
+                  <MyAssetActions project={project} assetId={img.id} />
+                </div>
+              );
+            })}
           </div>
         </div>
       ))}
+      {mySounds.length > 0 && (
+        <div className="section">
+          <h4>My sounds</h4>
+          <div className="stack" style={{ gap: 4 }}>
+            {mySounds.map((s) => (
+              <div key={s.id} className="row" style={{ position: 'relative' }}>
+                <button className="btn small icon" onClick={() => s.url && void new Audio(s.url).play().catch(() => undefined)} disabled={!s.url} title={`Play "${s.name}"`} aria-label={`Play ${s.name}`}>
+                  ▶
+                </button>
+                <span className="grow" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  {s.name}
+                </span>
+                <MyAssetActions project={project} assetId={s.id} inline />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
