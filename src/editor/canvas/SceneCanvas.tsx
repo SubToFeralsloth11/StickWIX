@@ -53,6 +53,8 @@ export function SceneCanvas({ project, lib }: { project: Project; lib: Library }
   const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
   const [tick, setTick] = useState(0);
   const [spaceHeld, setSpaceHeld] = useState(false);
+  /** Pointer-down position in client and scene pixels; drag deltas come from client movement so layout shifts can't move things. */
+  const down = useRef<{ cx: number; cy: number; x: number; y: number } | null>(null);
   const libRef = useRef(lib);
   libRef.current = lib;
   const cell = scene.tileLayer.cellSize;
@@ -157,10 +159,17 @@ export function SceneCanvas({ project, lib }: { project: Project; lib: Library }
   const edit = editorStore.getState().edit;
   const select = editorStore.getState().select;
 
+  /** Scene point under the pointer, measured from where the press started (stable even if the canvas moved on screen). */
+  const dragPoint = (e: React.PointerEvent) => {
+    const d = down.current;
+    return d ? { x: d.x + (e.clientX - d.cx) / zoom, y: d.y + (e.clientY - d.cy) / zoom } : toScene(e.clientX, e.clientY);
+  };
+
   const onPointerDown = (e: React.PointerEvent) => {
     if (playing) return;
     (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
     const p = toScene(e.clientX, e.clientY);
+    down.current = { cx: e.clientX, cy: e.clientY, x: p.x, y: p.y };
     setCursor(p);
     if (e.button === 1 || e.button === 2 || spaceHeld) {
       setDrag({ mode: 'pan', sx: e.clientX, sy: e.clientY, cam });
@@ -203,7 +212,7 @@ export function SceneCanvas({ project, lib }: { project: Project; lib: Library }
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
-    const p = toScene(e.clientX, e.clientY);
+    const p = dragPoint(e);
     setCursor(p);
     if (!drag) return;
     if (drag.mode === 'pan') setCam({ x: drag.cam.x - (e.clientX - drag.sx) / zoom, y: drag.cam.y - (e.clientY - drag.sy) / zoom });
@@ -216,7 +225,8 @@ export function SceneCanvas({ project, lib }: { project: Project; lib: Library }
   };
 
   const onPointerUp = (e: React.PointerEvent) => {
-    const p = toScene(e.clientX, e.clientY);
+    const p = dragPoint(e);
+    down.current = null;
     const d = drag;
     setDrag(null);
     if (!d) return;
