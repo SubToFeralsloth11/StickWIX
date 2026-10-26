@@ -157,39 +157,51 @@ function blockingEdge(
   return best;
 }
 
-/** Key for an unordered pair of instance ids. */
-export function pairKey(a: string, b: string) {
-  return a < b ? `${a}|${b}` : `${b}|${a}`;
-}
-
 /**
  * Finds every overlapping pair among `insts` and reports pairs that started
- * touching this step (contact start fires once per touch).
+ * touching this step (contact start fires once per touch). Pairs live in
+ * identity-keyed sets (no per-pair strings or tuples): a pile of objects at
+ * the 1,000-object cap is ~500k pairs per step.
  */
 export class Contacts {
-  private current = new Map<string, [Instance, Instance]>();
-  private hash = new SpatialHash(128);
+  /** Instance → the later-listed instances it overlaps. */
+  private current = new Map<Instance, Set<Instance>>();
+  /** Broad phase: cell → indices into this step's instance list. */
+  private cells = new Map<number, number[]>();
 
   update(insts: Instance[], onStart: (a: Instance, b: Instance) => void) {
-    this.hash.clear();
-    for (const i of insts) this.hash.insert(i);
-    const next = new Map<string, [Instance, Instance]>();
-    const near = new Set<Instance>();
-    for (const a of insts) {
-      near.clear();
-      const ab = hitbox(a);
-      for (const b of this.hash.query(ab, near)) {
-        if (b === a || a.id > b.id) continue;
-        if (boxesOverlap(ab, hitbox(b))) next.set(pairKey(a.id, b.id), [a, b]);
-      }
+    const size = 128;
+    const boxes = insts.map(hitbox);
+    this.cells.clear();
+    const next = new Map<Instance, Set<Instance>>();
+    for (let i = 0; i < insts.length; i++) {
+      const b = boxes[i]!;
+      const x0 = Math.floor(b.x / size), x1 = Math.floor((b.x + b.w) / size);
+      const y0 = Math.floor(b.y / size), y1 = Math.floor((b.y + b.h) / size);
+      for (let cx = x0; cx <= x1; cx++)
+        for (let cy = y0; cy <= y1; cy++) {
+          const k = (cx + 32768) * 65536 + (cy + 32768);
+          let list = this.cells.get(k);
+          if (!list) this.cells.set(k, (list = []));
+          // Everything already in the cell has a lower index: each pair is checked once per shared cell.
+          for (const j of list)
+            if (boxesOverlap(b, boxes[j]!)) {
+              const a = insts[j]!;
+              let set = next.get(a);
+              if (!set) next.set(a, (set = new Set()));
+              set.add(insts[i]!);
+            }
+          list.push(i);
+        }
     }
     const prev = this.current;
     this.current = next;
-    for (const [k, [a, b]] of next) if (!prev.has(k)) onStart(a, b);
+    for (const [a, set] of next)
+      for (const b of set) if (!prev.get(a)?.has(b) && !prev.get(b)?.has(a)) onStart(a, b);
   }
 
-  touching(a: string, b: string) {
-    return this.current.has(pairKey(a, b));
+  touching(a: Instance, b: Instance) {
+    return !!(this.current.get(a)?.has(b) || this.current.get(b)?.has(a));
   }
 
   clear() {

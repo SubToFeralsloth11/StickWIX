@@ -281,6 +281,6 @@ export class World implements WorldApi {
   }
 
   touching(a: Instance, b: Instance) {
-    return this.contacts.touching(a.id, b.id) || this.overlaps(a, b);
+    return this.contacts.touching(a, b) || this.overlaps(a, b);
   }
 }
