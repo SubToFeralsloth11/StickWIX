@@ -89,9 +89,11 @@ function renamePlaceholders(rules: Rule[], renamed: Map<string, string>) {
 
 /**
  * Copies an object preset into `project` (mutated in place, so it works inside
- * an Immer recipe): its Kinds, game values and rules get fresh ids, clashing
- * names get a numeric suffix ("Coin 2"), nothing existing is reused, and one
- * object of the main Kind is placed with its top-left corner at (x, y).
+ * an Immer recipe): its Kinds and rules get fresh ids and clashing Kind names
+ * get a numeric suffix ("Coin 2"). A preset game value whose name and type
+ * match an existing game value is shared with it (two Coins add to one
+ * Score); any other value is copied, suffixed on a name clash. One object of
+ * the main Kind is placed with its top-left corner at (x, y).
  */
 export function insertObjectPreset(
   project: Project,
@@ -105,11 +107,19 @@ export function insertObjectPreset(
     mapKind(ids, k);
     for (const r of k.rules) ids.fresh(r.id, 'r');
   }
-  for (const v of preset.values) ids.fresh(v.id, 'v');
+  const copied: ObjectPreset['values'] = [];
+  for (const v of preset.values) {
+    const same = project.values.find((p) => p.name.trim().toLowerCase() === v.name.trim().toLowerCase() && p.type === v.type);
+    if (same) ids.set(v.id, same.id);
+    else {
+      ids.fresh(v.id, 'v');
+      copied.push(v);
+    }
+  }
   for (const r of preset.rules) ids.fresh(r.id, 'r');
 
   const kinds = remap(preset.kinds, ids);
-  const values = remap(preset.values, ids);
+  const values = remap(copied, ids);
   const rules = remap(preset.rules, ids);
 
   const kindNames = project.kinds.map((k) => k.name);

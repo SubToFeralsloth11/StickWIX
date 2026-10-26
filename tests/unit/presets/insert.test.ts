@@ -192,28 +192,32 @@ describe('insertObjectPreset (FR-025, FR-027)', () => {
     expect(enemy).toEqual(before);
   });
 
-  it('suffixes clashing names and reuses nothing on a second insert', () => {
+  it('copies Kinds again with a suffix but shares a game value of the same name and type', () => {
     const p = newProject();
     const sceneId = p.scenes[0]!.id;
     const a = insertObjectPreset(p, preset('Coin'), { sceneId, x: 0, y: 0 });
     const b = insertObjectPreset(p, preset('Coin'), { sceneId, x: 50, y: 0 });
     expect(p.kinds.map((k) => k.name)).toEqual(['Coin', 'Coin 2']);
-    expect(p.values.map((v) => v.name)).toEqual(['Score', 'Score 2']);
+    expect(p.values.map((v) => v.name)).toEqual(['Score']);
     expect(a.kindIds[0]).not.toBe(b.kindIds[0]);
-    const second = p.kinds.find((k) => k.id === b.kindIds[0])!;
-    expect(JSON.stringify(second.rules)).toContain(p.values[1]!.id);
-    expect(JSON.stringify(second.rules)).not.toContain(p.values[0]!.id);
+    const [first, second] = [a, b].map((r) => p.kinds.find((k) => k.id === r.kindIds[0])!);
+    expect(first!.rules[0]!.id).not.toBe(second!.rules[0]!.id);
+    for (const k of [first!, second!]) expect(JSON.stringify(k.rules)).toContain(p.values[0]!.id);
     expect(Project.safeParse(p).success).toBe(true);
   });
 
-  it('points text placeholders at a renamed value copy', () => {
+  it('copies a game value whose name clashes with a different type, and fixes text placeholders', () => {
     const p = newProject();
     const sceneId = p.scenes[0]!.id;
-    insertObjectPreset(p, preset('Upgrade Button'), { sceneId, x: 0, y: 0 });
-    const { kindIds } = insertObjectPreset(p, preset('Upgrade Button'), { sceneId, x: 0, y: 64 });
-    const texts = (k: string) => JSON.stringify(p.kinds.find((x) => x.id === k)!.rules.flatMap((r) => r.actions));
-    expect(texts(kindIds[0]!)).toContain('{Upgrade Cost 2}');
-    expect(texts(p.kinds[0]!.id)).toContain('{Upgrade Cost}');
+    p.values.push({ id: 'mine', name: 'upgrade cost', scope: 'game', type: 'text', start: 'x', remember: false });
+    const { kindIds } = insertObjectPreset(p, preset('Upgrade Button'), { sceneId, x: 0, y: 0 });
+    expect(p.values.map((v) => v.name)).toEqual(['upgrade cost', 'Coins', 'Per Click', 'Upgrade Cost 2']);
+    const copy = p.values.find((v) => v.name === 'Upgrade Cost 2')!;
+    const rules = JSON.stringify(p.kinds.find((x) => x.id === kindIds[0])!.rules);
+    expect(rules).toContain('{Upgrade Cost 2}');
+    expect(rules).toContain(copy.id);
+    expect(rules).not.toContain('"mine"');
+    expect(Project.safeParse(p).success).toBe(true);
   });
 
   it('remaps references between the preset’s own Kinds (Turret → its projectile)', () => {
