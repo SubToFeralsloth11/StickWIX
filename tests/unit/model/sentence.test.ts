@@ -75,6 +75,8 @@ describe('sentence rendering (contracts/rule-grammar.md)', () => {
       "that Enemy's Health goes down by 1.",
     );
     expect(a({ type: 'changeValue', value: { valueId: 'score' }, op: 'add', amount: ref('pc') })).toBe('Score goes up by Per Click.');
+    expect(a({ type: 'changeValue', value: { valueId: 'score' }, op: 'add', amount: ref('hp', that('enemy')) })).toBe("Score goes up by that Enemy's Health.");
+    expect(a({ type: 'moveBy', target: obj('h'), by: { x: ref('hp', { t: 'self' }), y: lit(0) } })).toBe("Hero moves by this object's Health, 0.");
     expect(a({ type: 'showText', text: 'You win!', seconds: lit(2) })).toBe('show "You win!" for 2 seconds.');
     expect(a({ type: 'wait', seconds: lit(1) })).toBe('wait 1 second.');
     expect(a({ type: 'changeScene', sceneId: 's2' })).toBe('go to scene Level 2.');

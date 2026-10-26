@@ -103,11 +103,19 @@ export function ruleSegments(rule: Rule, p: Project, names: NameLookup = {}): Se
   const num = (n: Num, path: (string | number)[]) => {
     if ('unset' in n) return blank('number', path, undefined, true);
     if ('lit' in n) return blank('number', path, String(n.lit));
+    ownerOf(n.ref, path);
     blank('number', path, values.get(n.ref.valueId) ?? missing);
+  };
+  /** "that Coin's" / "this object's" before a per-object value used as an amount. */
+  const ownerOf = (r: ValueRef, path: (string | number)[]) => {
+    if (!r.of) return;
+    target(r.of, [...path, 'ref', 'of']);
+    word("'s");
   };
   const operand = (o: Operand, path: (string | number)[]) => {
     if ('unset' in o) return blank('operand', path, undefined, true);
     if ('lit' in o) return blank('operand', path, typeof o.lit === 'string' ? `"${o.lit}"` : String(o.lit));
+    ownerOf(o.ref, path);
     blank('operand', path, values.get(o.ref.valueId) ?? missing);
   };
   const ref = (kind: BlankKind, id: string | { unset: true }, path: (string | number)[], name: (id: string) => string | undefined) =>
