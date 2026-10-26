@@ -19,12 +19,15 @@ pnpm dev          # builds the game-player template the first time, then http://
 
 Open the page, take the guided tour (offered on first launch, or **Help → Guided tour**), or press **New game** and pick a starter.
 
+No server? `pnpm build:file` writes `dist-file/StickWIX.html`, the whole editor with built-in art, sound and the game player inlined. Double-click it to open it from `file://`. Projects are saved in that browser's storage for local files.
+
 ## Scripts
 
 | Script | What it does |
 |---|---|
 | `pnpm dev` | Editor dev server (port 5199). Builds `public/player-template.html` first if missing. |
 | `pnpm build` | Player template, type check, then the editor into `dist/` (static files; host anywhere). |
+| `pnpm build:file` | Same checks, then the editor as one self-contained `dist-file/StickWIX.html` that runs from `file://`. |
 | `pnpm build:player` | Single-file game player → `public/player-template.html`, fails if over 600 KB. |
 | `pnpm test` | Unit and integration tests (Vitest, jsdom, fake IndexedDB, headless runtime). |
 | `pnpm test:e2e` | End-to-end tests (Playwright, Chromium, one worker). `perf.spec.ts` runs headed to measure the real GPU. |

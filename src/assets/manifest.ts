@@ -1,3 +1,4 @@
+import { builtinFiles } from 'virtual:stickwix-inline';
 import { z } from 'zod';
 
 /**
@@ -87,8 +88,14 @@ export function builtinBaseUrl(): string {
   return `${import.meta.env?.BASE_URL ?? '/'}${BUILTIN_ASSET_DIR}`;
 }
 
-/** URL of a manifest entry's `file` (e.g. `img/hero.png`). */
-export function builtinAssetUrl(file: string, base: string = builtinBaseUrl()): string {
+/**
+ * URL of a manifest entry's `file` (e.g. `img/hero.png`). Without an explicit
+ * `base`, the single-file build returns the inlined data URL.
+ */
+export function builtinAssetUrl(file: string, base?: string): string {
+  const inlined = base === undefined ? builtinFiles?.[file] : undefined;
+  if (inlined) return inlined;
+  base ??= builtinBaseUrl();
   return base.endsWith('/') ? `${base}${file}` : `${base}/${file}`;
 }
 
@@ -98,7 +105,7 @@ export function parseBuiltinManifest(json: unknown): BuiltinManifest {
 }
 
 export interface LoadManifestOptions {
-  /** Base URL of the asset directory; defaults to `builtinBaseUrl()`. */
+  /** Base URL of the asset directory; defaults to `builtinBaseUrl()` (or the inlined copy in the single-file build). */
   base?: string;
   fetch?: typeof fetch;
 }
@@ -106,7 +113,7 @@ export interface LoadManifestOptions {
 /** Fetches and validates `manifest.json` from the built-in asset directory. */
 export async function loadManifest(options: LoadManifestOptions = {}): Promise<BuiltinManifest> {
   const doFetch = options.fetch ?? fetch;
-  const url = builtinAssetUrl('manifest.json', options.base ?? builtinBaseUrl());
+  const url = builtinAssetUrl('manifest.json', options.base);
   const res = await doFetch(url);
   if (!res.ok) throw new Error(`Failed to load built-in asset manifest (${res.status}) from ${url}`);
   return parseBuiltinManifest(await res.json());

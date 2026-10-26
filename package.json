@@ -14,7 +14,8 @@
     "lint": "eslint .",
     "typecheck": "tsc -b --noEmit",
     "format": "prettier --write .",
-    "assets": "tsx scripts/fetch-builtin-assets.ts"
+    "assets": "tsx scripts/fetch-builtin-assets.ts",
+    "build:file": "pnpm build:player && tsc -b && vite build --mode file"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "^1.1.15",

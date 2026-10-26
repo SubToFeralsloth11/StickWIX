@@ -11,3 +11,4 @@ progress/*.tmp
 progress/updater.log
 progress/.lock
 public/player-template.html
+dist-file/

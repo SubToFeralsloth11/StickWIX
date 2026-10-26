@@ -1,7 +1,9 @@
 import { defineConfig } from 'vitest/config';
 import { fileURLToPath } from 'node:url';
+import { inlineAssets } from './scripts/vite-inline-assets';
 
 export default defineConfig({
+  plugins: [inlineAssets(false, fileURLToPath(new URL('./public', import.meta.url)))],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
   test: {
     environment: 'jsdom',

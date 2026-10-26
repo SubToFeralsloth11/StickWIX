@@ -11,7 +11,7 @@ const noEditorOrReact = {
 };
 
 export default tseslint.config(
-  { ignores: ['dist', 'node_modules', 'public', 'progress', 'test-results', 'playwright-report', '.local'] },
+  { ignores: ['dist', 'dist-file', 'node_modules', 'public', 'progress', 'test-results', 'playwright-report', '.local'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

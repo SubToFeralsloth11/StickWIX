@@ -1,12 +1,10 @@
 import { useEffect, useMemo } from 'react';
 import { create } from 'zustand';
-import { builtinBaseUrl, loadManifest as fetchManifest, type BuiltinManifest } from '@/assets/manifest';
+import { builtinAssetUrl, loadManifest as fetchManifest, type BuiltinManifest } from '@/assets/manifest';
 import type { Asset, Project } from '@/model/schema';
 import { builtinName } from '@/model/sentence';
 import type { AssetInfo } from '@/runtime/render/renderer';
 import { getAsset } from '@/storage/db';
-
-export const BUILTIN_BASE = builtinBaseUrl();
 
 interface LibState {
   manifest: BuiltinManifest | null;
@@ -82,7 +80,7 @@ export function makeLibrary(manifest: BuiltinManifest | null, project: Project |
   const url = (id: string) => {
     if (id.startsWith('builtin:')) {
       const m = manifest?.images[id] ?? manifest?.tilesets[id] ?? manifest?.sounds[id];
-      return m ? BUILTIN_BASE + m.file : undefined;
+      return m ? builtinAssetUrl(m.file) : undefined;
     }
     // Only assets still in the project: a deleted asset must show the placeholder, while undo can bring it back.
     return project && own.has(id) ? blobUrls[`${project.id}:${id}`] : undefined;
@@ -101,7 +99,7 @@ export function makeLibrary(manifest: BuiltinManifest | null, project: Project |
     info,
     name: (id) => manifest?.images[id]?.name ?? manifest?.sounds[id]?.name ?? manifest?.tilesets[id]?.name ?? own.get(id)?.name ?? (id.startsWith('builtin:') ? builtinName(id) : undefined),
     images: () => [
-      ...Object.entries(manifest?.images ?? {}).map(([id, m]) => ({ id, name: m.name, url: BUILTIN_BASE + m.file, w: m.w, h: m.h, frames: m.frames, fps: m.fps, category: m.category, theme: m.theme, source: 'builtin' as const })),
+      ...Object.entries(manifest?.images ?? {}).map(([id, m]) => ({ id, name: m.name, url: builtinAssetUrl(m.file), w: m.w, h: m.h, frames: m.frames, fps: m.fps, category: m.category, theme: m.theme, source: 'builtin' as const })),
       ...(project?.assets ?? []).flatMap((a) =>
         a.kind === 'image' && a.source !== 'builtin'
           ? [{ id: a.id, name: a.name, url: url(a.id) ?? '', w: a.frames.w, h: a.frames.h, frames: a.frames.count, fps: a.frames.fps, category: 'mine', theme: 'any', source: a.source }]
@@ -109,7 +107,7 @@ export function makeLibrary(manifest: BuiltinManifest | null, project: Project |
       ),
     ],
     sounds: () => [
-      ...Object.entries(manifest?.sounds ?? {}).map(([id, m]) => ({ id, name: m.name, url: BUILTIN_BASE + m.file, category: m.category, source: 'builtin' })),
+      ...Object.entries(manifest?.sounds ?? {}).map(([id, m]) => ({ id, name: m.name, url: builtinAssetUrl(m.file), category: m.category, source: 'builtin' })),
       ...(project?.assets ?? []).flatMap((a) => (a.kind === 'sound' ? [{ id: a.id, name: a.name, url: url(a.id) ?? '', category: 'mine', source: a.source }] : [])),
     ],
   };

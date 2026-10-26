@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { playerTemplate } from 'virtual:stickwix-inline';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { downloadFile, exportGame } from '@/export/export-game';
 import type { Project } from '@/model/schema';
@@ -38,10 +39,10 @@ export function exportProjectBackup(project: Project, lib?: Library): void {
 }
 
 async function saveGame(project: Project, lib: Library) {
-  const res = await fetch(`${import.meta.env.BASE_URL}player-template.html`).catch(() => undefined);
-  if (!res?.ok) throw new Error('The game player could not be loaded, so the game could not be exported.');
+  const template = playerTemplate ?? (await fetch(`${import.meta.env.BASE_URL}player-template.html`).then((r) => (r.ok ? r.text() : undefined), () => undefined));
+  if (!template) throw new Error('The game player could not be loaded, so the game could not be exported.');
   const html = await exportGame(project, {
-    template: await res.text(),
+    template,
     loadAsset: assetLoader(project, lib),
     builtinUrl: (id) => lib.url(id),
     manifest: lib.manifest,
