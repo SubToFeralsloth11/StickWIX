@@ -4,7 +4,7 @@ import { version as APP_VERSION } from '../../package.json';
 import { newId } from '@/model/ids';
 import { migrate, NewerVersionError } from '@/model/migrations';
 import type { Asset, Project } from '@/model/schema';
-import { deleteProject, putAsset, putProject } from './db';
+import { putProjectWithAssets } from './db';
 
 /** `.stickwix` project file (contracts/project-file.md): a zip of project.json, meta.json and assets/. */
 
@@ -111,13 +111,6 @@ export async function importProjectFile(file: Blob | ArrayBuffer): Promise<Proje
   }
 
   const project: Project = { ...doc, id: newId('p') };
-  try {
-    // Assets first, document last: until the document exists the project is invisible.
-    for (const [assetId, blob] of blobs) await putAsset(project.id, assetId, blob);
-    await putProject(project);
-  } catch (e) {
-    await deleteProject(project.id).catch(() => {});
-    throw e;
-  }
+  await putProjectWithAssets(project, blobs);
   return project;
 }

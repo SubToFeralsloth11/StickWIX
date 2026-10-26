@@ -99,6 +99,15 @@ export async function duplicateProject(id: string): Promise<Project> {
   return copy;
 }
 
+/** Writes a document and its asset blobs in one transaction: all of it lands, or none (project-file import). */
+export async function putProjectWithAssets(doc: Project, blobs: readonly (readonly [assetId: string, blob: Blob])[]): Promise<void> {
+  const tx = (await db()).transaction(['projects', 'assets'], 'readwrite');
+  const assets = tx.objectStore('assets');
+  for (const [assetId, blob] of blobs) void assets.put({ projectId: doc.id, assetId, blob });
+  void tx.objectStore('projects').put(record(doc));
+  await tx.done;
+}
+
 export async function deleteProject(id: string): Promise<void> {
   const tx = (await db()).transaction(['projects', 'assets'], 'readwrite');
   await tx.objectStore('projects').delete(id);

@@ -6,6 +6,7 @@ import { toast } from '../toast';
 import { NewProjectDialog } from './NewProjectDialog';
 import { ImportButton } from './ImportExport';
 import { ConfirmDialog } from '../ConfirmDialog';
+import { TourOffer } from '../tour/TourOffer';
 
 function when(iso: string) {
   const d = new Date(iso);
@@ -55,6 +56,7 @@ export function HomeScreen() {
           </div>
         </header>
 
+        <TourOffer />
         <h2>Your games</h2>
         {projects === null ? (
           <div className="muted">Loading…</div>
