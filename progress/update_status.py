@@ -23,7 +23,8 @@ Usage:
   update_status.py block T138 why   mark a task blocked     ([blocked: why])
   update_status.py finish           all done; freezes the timer as total
 """
-import json, os, re, subprocess, sys, time
+import fcntl, json, os, re, subprocess, sys, time
+from contextlib import contextmanager
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -47,16 +48,28 @@ TASK_RE = re.compile(r"^- \[([^\]]*)\] (T\d{3})\s+(.*)$")
 
 
 def load_json(p, default):
-    try:
-        return json.loads(p.read_text())
-    except Exception:
+    """Missing file -> default. A file that exists but cannot be parsed raises,
+    so a bad read can never silently reset the working-time clock."""
+    if not p.exists():
         return default
+    return json.loads(p.read_text())
 
 
 def save_json(p, data):
-    tmp = p.with_suffix(".tmp")
+    tmp = p.with_name(f"{p.name}.{os.getpid()}.tmp")
     tmp.write_text(json.dumps(data, indent=1))
     tmp.replace(p)
+
+
+@contextmanager
+def locked():
+    """Serialises the --loop updater and CLI calls (they share clock/notes/tasks)."""
+    with open(HERE / ".lock", "w") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
 
 
 def parse_tasks():
@@ -258,11 +271,14 @@ if __name__ == "__main__":
         every = float(args[1])
         while True:
             try:
-                build()
+                with locked():
+                    build()
             except Exception as e:  # keep the loop alive; the page shows the last good data
                 print("update failed:", e, file=sys.stderr)
             time.sleep(every)
     elif args:
-        cli(args)
+        with locked():
+            cli(args)
     else:
-        build()
+        with locked():
+            build()
