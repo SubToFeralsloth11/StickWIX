@@ -42,8 +42,8 @@ test('a hand-made clicker with values, rules, a button and on-screen text', asyn
   await page.locator('[data-tour="tab-screen"]').click();
   await page.getByTestId('add-ui-text').click();
   await page.getByTestId('add-ui-button').click();
-  await page.getByLabel('Name', { exact: true }).fill('Upgrade');
-  await page.getByLabel('Name', { exact: true }).press('Tab');
+  await page.getByLabel('Screen item name').fill('Upgrade');
+  await page.getByLabel('Screen item name').press('Tab');
 
   // Rule 1: When [Cookie] is clicked → [Coins] goes up by [Per Click].
   await page.locator('[data-tour="tab-rules"]').click();
@@ -79,14 +79,10 @@ test('a hand-made clicker with values, rules, a button and on-screen text', asyn
   await blank(page, 'actions.1.value');
   await pickOption(page, /^Per Click/);
 
-  await expect(card.locator('.sentence')).toHaveText(
-    'When Upgrade is clicked, only if Coins is at least 10 → Coins goes down by 10 and Per Click goes up by 1.'.replace(/ /g, ''),
-    { useInnerText: false },
-  ).catch(async () => {
-    // Text nodes are separate chips; compare with whitespace collapsed.
-    const text = (await card.locator('.sentence').innerText()).replace(/\s+/g, ' ').trim();
-    expect(text).toBe('When Upgrade is clicked , only if Coins is at least 10 → Coins goes down by 10 and Per Click goes up by 1 .'.replace(' ,', ',').replace(' .', '.'));
-  });
+  await expect(card.locator('.sentence')).toHaveAttribute(
+    'data-sentence',
+    'When Upgrade is clicked, only if Coins is at least 10 → Coins goes down by 10 and Per Click goes up by 1.',
+  );
   await expect(page.locator('.rule.incomplete, .rule.broken')).toHaveCount(0);
 
   // Play: 10 clicks, Upgrade, then the next click adds 2.

@@ -3,7 +3,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import type { RuleOwner, RuleState } from '@/model/references';
 import type { Project, Rule } from '@/model/schema';
 import { ACTIONS, CONDITIONS, TRIGGERS } from '@/model/rule-templates';
-import { ruleSegments, type Segment } from '@/model/sentence';
+import { joinSegments, ruleSegments, type Segment } from '@/model/sentence';
 import type { Library } from '../assets/library';
 import { editorStore } from '../store';
 import * as R from '../store/rule-ops';
@@ -85,7 +85,7 @@ export function SentenceCard({ project, lib, rule, owner, state, runaway, flash,
 
   return (
     <div ref={ref} className={`rule ${rule.enabled ? '' : 'off'} ${state !== 'ok' ? state : ''} ${flash ? 'flash' : ''}`} data-testid="rule" data-rule-id={rule.id}>
-      <div className="sentence">
+      <div className="sentence" data-sentence={joinSegments(segs)}>
         {groups.map((g, gi) => {
           const body = g.segs.map((s, i) => renderSeg(s, gi * 1000 + i));
           if (!g.part || g.part.kind === 'trigger') {

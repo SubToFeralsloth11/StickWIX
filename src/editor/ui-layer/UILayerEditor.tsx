@@ -65,7 +65,7 @@ export function UILayerEditor({ project, lib }: PanelProps) {
           <div className="stack">
             <label className="row">
               <span className="muted">Name</span>
-              <input key={el.id + el.name} className="field grow" defaultValue={el.name} maxLength={40} disabled={readOnly} onBlur={(e) => {
+              <input key={el.id + el.name} className="field grow" aria-label="Screen item name" defaultValue={el.name} maxLength={40} disabled={readOnly} onBlur={(e) => {
                 const v = e.currentTarget.value.trim();
                 if (v && v !== el.name && !scene.ui.some((u) => u.id !== el.id && u.name.toLowerCase() === v.toLowerCase())) patchUI(sceneId, el.id, 'Rename', (x) => void (x.name = v));
               }} />

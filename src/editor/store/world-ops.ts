@@ -273,7 +273,8 @@ export function addUIElement(p: P, sceneId: string, type: UIElement['type'], ini
   const s = sceneOf(p, sceneId);
   const base = type === 'text' ? 'Text' : type === 'button' ? 'Button' : 'Image';
   const el: UIElement = {
-    id: newId('u'), name: uniqueName(init.name ?? base, s.ui.map((u) => u.name)), type, x: 16, y: 16, anchor: 'tl',
+    // New items stack down the left edge so they never land on top of each other.
+    id: newId('u'), name: uniqueName(init.name ?? base, s.ui.map((u) => u.name)), type, x: 16, y: 16 + (s.ui.filter((u) => u.anchor === 'tl').length % 10) * 48, anchor: 'tl',
     text: type === 'image' ? '' : type === 'button' ? 'Click me' : 'Score: {Score}',
     style: { size: 24, color: '#ffffff', font: 'round' }, hidden: false, ...init,
   };
