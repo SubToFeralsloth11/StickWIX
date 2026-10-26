@@ -21,7 +21,8 @@ const FONTS: Record<UIElement['style']['font'], { family: string; weight: TextSt
 
 /** Loads images once and slices frames; missing or broken images get a placeholder (FR asset deletion edge case). */
 class TextureCache {
-  private base = new Map<string, Texture | 'loading' | 'missing'>();
+  /** `missing` remembers which URL failed (undefined = none was known yet), so a URL that turns up later is retried. */
+  private base = new Map<string, Texture | 'loading' | { missing: string | undefined }>();
   private frames = new Map<string, Texture>();
   readonly placeholder: Texture;
 
@@ -32,10 +33,9 @@ class TextureCache {
     this.placeholder.source.scaleMode = 'nearest';
   }
 
-  private load(id: string) {
-    const url = this.o.textureUrl(id);
+  private load(id: string, url: string | undefined) {
     if (!url) {
-      this.base.set(id, 'missing');
+      this.base.set(id, { missing: undefined });
       return;
     }
     this.base.set(id, 'loading');
@@ -51,17 +51,24 @@ class TextureCache {
         this.o.onTextureLoad?.();
       })
       .catch(() => {
-        this.base.set(id, 'missing');
+        this.base.set(id, { missing: url });
         this.o.onTextureLoad?.();
       });
   }
 
-  /** Whole image, or null while loading. */
+  /** Whole image, the placeholder if it can't be had, or null while loading. */
   image(id: string): Texture | null {
     const b = this.base.get(id);
-    if (b === undefined) this.load(id);
-    if (b === 'missing') return this.placeholder;
-    return b instanceof Texture ? b : null;
+    if (b instanceof Texture) return b;
+    if (b === 'loading') return null;
+    const url = this.o.textureUrl(id);
+    // Not tried yet, or the asset list (re)loaded since and now knows a different URL.
+    if (b === undefined || b.missing !== url) {
+      this.load(id, url);
+      const now = this.base.get(id);
+      return now instanceof Texture ? now : now === 'loading' ? null : this.placeholder;
+    }
+    return this.placeholder;
   }
 
   /** One frame of a horizontal strip. */
@@ -187,7 +194,8 @@ export class PixiRenderer implements Renderer {
       return;
     }
     if ('assetId' in b && !tex) return; // retry next frame once loaded
-    this.bgKey = key;
+    // A placeholder stand-in is drawn but not remembered, so the real picture replaces it once it loads.
+    this.bgKey = tex === this.textures.placeholder ? '' : key;
     this.bg.removeChildren().forEach((c) => c.destroy());
     if ('color' in b) {
       this.bg.addChild(new Graphics().rect(0, 0, v.screen.w, v.screen.h).fill(b.color));
@@ -210,8 +218,10 @@ export class PixiRenderer implements Renderer {
     const layer = v.scene.tileLayer;
     const ts = v.tileSet;
     if (this.drawnTiles && this.drawnTiles.layer === layer && this.drawnTiles.tileSet === ts) return;
-    if (ts && !this.textures.image(ts.assetId)) return; // not loaded yet
-    this.drawnTiles = { layer, tileSet: ts };
+    const sheet = ts ? this.textures.image(ts.assetId) : null;
+    if (ts && !sheet) return; // not loaded yet
+    // Same for a missing tile sheet: draw placeholders now, try again next frame.
+    this.drawnTiles = sheet === this.textures.placeholder ? null : { layer, tileSet: ts };
     this.tiles.removeChildren().forEach((c) => c.destroy());
     if (!ts) return;
     for (const [cell, index] of Object.entries(layer.cells)) {
