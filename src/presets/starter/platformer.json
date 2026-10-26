@@ -1,0 +1,1989 @@
+{
+  "id": "starter-platformer",
+  "schemaVersion": 1,
+  "name": "Platformer Adventure",
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "settings": {
+    "screenWidth": 960,
+    "screenHeight": 540,
+    "pixelArt": true,
+    "showMeKey": "F2",
+    "backgroundMusic": "builtin:music/adventure"
+  },
+  "startSceneId": "scene-level1",
+  "scenes": [
+    {
+      "id": "scene-level1",
+      "name": "Level 1",
+      "width": 3200,
+      "height": 540,
+      "background": {
+        "assetId": "builtin:img/bg_hills",
+        "mode": "parallax"
+      },
+      "tileLayer": {
+        "tileSetId": "tileset-grass",
+        "cellSize": 32,
+        "cells": {
+          "0,0": 36,
+          "99,0": 36,
+          "0,1": 36,
+          "99,1": 36,
+          "0,2": 36,
+          "99,2": 36,
+          "0,3": 36,
+          "99,3": 36,
+          "0,4": 36,
+          "99,4": 36,
+          "0,5": 36,
+          "99,5": 36,
+          "0,6": 36,
+          "99,6": 36,
+          "0,7": 36,
+          "99,7": 36,
+          "0,8": 36,
+          "99,8": 36,
+          "0,9": 36,
+          "99,9": 36,
+          "0,10": 36,
+          "99,10": 36,
+          "0,11": 36,
+          "48,11": 52,
+          "49,11": 53,
+          "50,11": 53,
+          "51,11": 54,
+          "99,11": 36,
+          "0,12": 36,
+          "99,12": 36,
+          "0,13": 36,
+          "34,13": 1,
+          "35,13": 1,
+          "36,13": 1,
+          "37,13": 1,
+          "38,13": 1,
+          "86,13": 1,
+          "87,13": 1,
+          "99,13": 36,
+          "0,14": 36,
+          "34,14": 36,
+          "35,14": 36,
+          "36,14": 36,
+          "37,14": 36,
+          "38,14": 36,
+          "84,14": 1,
+          "85,14": 1,
+          "86,14": 36,
+          "87,14": 36,
+          "99,14": 36,
+          "0,15": 36,
+          "1,15": 1,
+          "2,15": 1,
+          "3,15": 1,
+          "4,15": 1,
+          "5,15": 1,
+          "6,15": 1,
+          "7,15": 1,
+          "8,15": 1,
+          "9,15": 1,
+          "10,15": 1,
+          "11,15": 1,
+          "12,15": 1,
+          "13,15": 1,
+          "14,15": 1,
+          "15,15": 1,
+          "16,15": 1,
+          "17,15": 1,
+          "18,15": 1,
+          "19,15": 1,
+          "20,15": 1,
+          "21,15": 1,
+          "22,15": 1,
+          "23,15": 1,
+          "27,15": 1,
+          "28,15": 1,
+          "29,15": 1,
+          "30,15": 1,
+          "31,15": 1,
+          "32,15": 1,
+          "33,15": 1,
+          "34,15": 36,
+          "35,15": 36,
+          "36,15": 36,
+          "37,15": 36,
+          "38,15": 36,
+          "39,15": 1,
+          "40,15": 1,
+          "41,15": 1,
+          "42,15": 1,
+          "43,15": 1,
+          "44,15": 1,
+          "45,15": 1,
+          "46,15": 1,
+          "47,15": 1,
+          "48,15": 1,
+          "49,15": 1,
+          "50,15": 1,
+          "51,15": 1,
+          "52,15": 1,
+          "53,15": 1,
+          "54,15": 1,
+          "55,15": 1,
+          "56,15": 1,
+          "57,15": 1,
+          "61,15": 1,
+          "62,15": 1,
+          "63,15": 1,
+          "64,15": 1,
+          "65,15": 1,
+          "66,15": 1,
+          "67,15": 1,
+          "68,15": 1,
+          "69,15": 1,
+          "70,15": 1,
+          "71,15": 1,
+          "72,15": 1,
+          "73,15": 1,
+          "74,15": 1,
+          "75,15": 1,
+          "76,15": 1,
+          "77,15": 1,
+          "78,15": 1,
+          "79,15": 1,
+          "80,15": 1,
+          "81,15": 1,
+          "82,15": 1,
+          "83,15": 1,
+          "84,15": 36,
+          "85,15": 36,
+          "86,15": 36,
+          "87,15": 36,
+          "88,15": 1,
+          "89,15": 1,
+          "90,15": 1,
+          "91,15": 1,
+          "92,15": 1,
+          "93,15": 1,
+          "94,15": 1,
+          "95,15": 1,
+          "96,15": 1,
+          "97,15": 1,
+          "98,15": 1,
+          "99,15": 36,
+          "0,16": 36,
+          "1,16": 36,
+          "2,16": 36,
+          "3,16": 36,
+          "4,16": 36,
+          "5,16": 36,
+          "6,16": 36,
+          "7,16": 36,
+          "8,16": 36,
+          "9,16": 36,
+          "10,16": 36,
+          "11,16": 36,
+          "12,16": 36,
+          "13,16": 36,
+          "14,16": 36,
+          "15,16": 36,
+          "16,16": 36,
+          "17,16": 36,
+          "18,16": 36,
+          "19,16": 36,
+          "20,16": 36,
+          "21,16": 36,
+          "22,16": 36,
+          "23,16": 36,
+          "27,16": 36,
+          "28,16": 36,
+          "29,16": 36,
+          "30,16": 36,
+          "31,16": 36,
+          "32,16": 36,
+          "33,16": 36,
+          "34,16": 36,
+          "35,16": 36,
+          "36,16": 36,
+          "37,16": 36,
+          "38,16": 36,
+          "39,16": 36,
+          "40,16": 36,
+          "41,16": 36,
+          "42,16": 36,
+          "43,16": 36,
+          "44,16": 36,
+          "45,16": 36,
+          "46,16": 36,
+          "47,16": 36,
+          "48,16": 36,
+          "49,16": 36,
+          "50,16": 36,
+          "51,16": 36,
+          "52,16": 36,
+          "53,16": 36,
+          "54,16": 36,
+          "55,16": 36,
+          "56,16": 36,
+          "57,16": 36,
+          "61,16": 36,
+          "62,16": 36,
+          "63,16": 36,
+          "64,16": 36,
+          "65,16": 36,
+          "66,16": 36,
+          "67,16": 36,
+          "68,16": 36,
+          "69,16": 36,
+          "70,16": 36,
+          "71,16": 36,
+          "72,16": 36,
+          "73,16": 36,
+          "74,16": 36,
+          "75,16": 36,
+          "76,16": 36,
+          "77,16": 36,
+          "78,16": 36,
+          "79,16": 36,
+          "80,16": 36,
+          "81,16": 36,
+          "82,16": 36,
+          "83,16": 36,
+          "84,16": 36,
+          "85,16": 36,
+          "86,16": 36,
+          "87,16": 36,
+          "88,16": 36,
+          "89,16": 36,
+          "90,16": 36,
+          "91,16": 36,
+          "92,16": 36,
+          "93,16": 36,
+          "94,16": 36,
+          "95,16": 36,
+          "96,16": 36,
+          "97,16": 36,
+          "98,16": 36,
+          "99,16": 36
+        }
+      },
+      "objects": [
+        {
+          "id": "obj-hero-1",
+          "kindId": "kind-hero",
+          "x": 96,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-2",
+          "kindId": "kind-coin",
+          "x": 256,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-3",
+          "kindId": "kind-coin",
+          "x": 320,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-4",
+          "kindId": "kind-coin",
+          "x": 384,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-5",
+          "kindId": "kind-coin",
+          "x": 768,
+          "y": 352,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-6",
+          "kindId": "kind-coin",
+          "x": 800,
+          "y": 352,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-7",
+          "kindId": "kind-coin",
+          "x": 832,
+          "y": 352,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-slime-8",
+          "kindId": "kind-slime",
+          "x": 512,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-9",
+          "kindId": "kind-coin",
+          "x": 1120,
+          "y": 384,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-10",
+          "kindId": "kind-coin",
+          "x": 1152,
+          "y": 384,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-11",
+          "kindId": "kind-coin",
+          "x": 1184,
+          "y": 384,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-spikes-12",
+          "kindId": "kind-spikes",
+          "x": 1408,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-13",
+          "kindId": "kind-coin",
+          "x": 1568,
+          "y": 320,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-14",
+          "kindId": "kind-coin",
+          "x": 1600,
+          "y": 320,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-15",
+          "kindId": "kind-coin",
+          "x": 1856,
+          "y": 352,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-16",
+          "kindId": "kind-coin",
+          "x": 1888,
+          "y": 352,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-17",
+          "kindId": "kind-coin",
+          "x": 1920,
+          "y": 352,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-slime-18",
+          "kindId": "kind-slime",
+          "x": 2112,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-19",
+          "kindId": "kind-coin",
+          "x": 2240,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-20",
+          "kindId": "kind-coin",
+          "x": 2304,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-21",
+          "kindId": "kind-coin",
+          "x": 2368,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-slime-22",
+          "kindId": "kind-slime",
+          "x": 2496,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-spikes-23",
+          "kindId": "kind-spikes",
+          "x": 2912,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-flag-24",
+          "kindId": "kind-flag",
+          "x": 3072,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        }
+      ],
+      "ui": [
+        {
+          "id": "ui-l1-score",
+          "name": "Score",
+          "type": "text",
+          "x": 16,
+          "y": 12,
+          "anchor": "tl",
+          "text": "Score: {Score}",
+          "style": {
+            "size": 28,
+            "color": "#ffffff",
+            "font": "bold"
+          },
+          "hidden": false
+        },
+        {
+          "id": "ui-l1-lives",
+          "name": "Lives",
+          "type": "text",
+          "x": -16,
+          "y": 12,
+          "anchor": "tr",
+          "text": "Lives: {Lives}",
+          "style": {
+            "size": 28,
+            "color": "#ffd6e0",
+            "font": "bold"
+          },
+          "hidden": false
+        },
+        {
+          "id": "ui-l1-help",
+          "name": "Help",
+          "type": "text",
+          "x": 0,
+          "y": -12,
+          "anchor": "b",
+          "text": "Arrows: run   Space: jump   Reach the flag!",
+          "style": {
+            "size": 18,
+            "color": "#ffffff",
+            "font": "round"
+          },
+          "hidden": false
+        }
+      ],
+      "rules": [
+        {
+          "id": "rule-l1-start",
+          "enabled": true,
+          "trigger": {
+            "type": "sceneStart"
+          },
+          "conditions": {
+            "join": "all",
+            "items": []
+          },
+          "actions": [
+            {
+              "type": "showText",
+              "text": "Level 1",
+              "seconds": {
+                "lit": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "rule-l1-flag",
+          "enabled": true,
+          "trigger": {
+            "type": "touches",
+            "a": {
+              "t": "any",
+              "kindId": "kind-hero"
+            },
+            "b": {
+              "t": "any",
+              "kindId": "kind-flag"
+            }
+          },
+          "conditions": {
+            "join": "all",
+            "items": []
+          },
+          "actions": [
+            {
+              "type": "playSound",
+              "assetId": "builtin:sfx/win"
+            },
+            {
+              "type": "changeScene",
+              "sceneId": "scene-level2"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scene-level2",
+      "name": "Level 2",
+      "width": 2560,
+      "height": 540,
+      "background": {
+        "assetId": "builtin:img/bg_forest",
+        "mode": "parallax"
+      },
+      "tileLayer": {
+        "tileSetId": "tileset-grass",
+        "cellSize": 32,
+        "cells": {
+          "0,0": 36,
+          "79,0": 36,
+          "0,1": 36,
+          "79,1": 36,
+          "0,2": 36,
+          "79,2": 36,
+          "0,3": 36,
+          "79,3": 36,
+          "0,4": 36,
+          "79,4": 36,
+          "0,5": 36,
+          "79,5": 36,
+          "0,6": 36,
+          "79,6": 36,
+          "0,7": 36,
+          "79,7": 36,
+          "0,8": 36,
+          "79,8": 36,
+          "0,9": 36,
+          "79,9": 36,
+          "0,10": 36,
+          "44,10": 52,
+          "45,10": 53,
+          "46,10": 53,
+          "47,10": 54,
+          "79,10": 36,
+          "0,11": 36,
+          "79,11": 36,
+          "0,12": 36,
+          "79,12": 36,
+          "0,13": 36,
+          "32,13": 1,
+          "33,13": 1,
+          "34,13": 1,
+          "35,13": 1,
+          "56,13": 1,
+          "57,13": 1,
+          "58,13": 1,
+          "59,13": 1,
+          "60,13": 1,
+          "79,13": 36,
+          "0,14": 36,
+          "32,14": 36,
+          "33,14": 36,
+          "34,14": 36,
+          "35,14": 36,
+          "56,14": 36,
+          "57,14": 36,
+          "58,14": 36,
+          "59,14": 36,
+          "60,14": 36,
+          "79,14": 36,
+          "0,15": 36,
+          "1,15": 1,
+          "2,15": 1,
+          "3,15": 1,
+          "4,15": 1,
+          "5,15": 1,
+          "6,15": 1,
+          "7,15": 1,
+          "8,15": 1,
+          "9,15": 1,
+          "10,15": 1,
+          "11,15": 1,
+          "12,15": 1,
+          "13,15": 1,
+          "14,15": 1,
+          "15,15": 1,
+          "16,15": 1,
+          "17,15": 1,
+          "18,15": 1,
+          "19,15": 1,
+          "23,15": 1,
+          "24,15": 1,
+          "25,15": 1,
+          "26,15": 1,
+          "27,15": 1,
+          "28,15": 1,
+          "29,15": 1,
+          "30,15": 1,
+          "31,15": 1,
+          "32,15": 36,
+          "33,15": 36,
+          "34,15": 36,
+          "35,15": 36,
+          "36,15": 1,
+          "37,15": 1,
+          "38,15": 1,
+          "39,15": 1,
+          "43,15": 1,
+          "44,15": 1,
+          "45,15": 1,
+          "46,15": 1,
+          "47,15": 1,
+          "48,15": 1,
+          "49,15": 1,
+          "50,15": 1,
+          "51,15": 1,
+          "52,15": 1,
+          "53,15": 1,
+          "54,15": 1,
+          "55,15": 1,
+          "56,15": 36,
+          "57,15": 36,
+          "58,15": 36,
+          "59,15": 36,
+          "60,15": 36,
+          "61,15": 1,
+          "62,15": 1,
+          "63,15": 1,
+          "64,15": 1,
+          "65,15": 1,
+          "69,15": 1,
+          "70,15": 1,
+          "71,15": 1,
+          "72,15": 1,
+          "73,15": 1,
+          "74,15": 1,
+          "75,15": 1,
+          "76,15": 1,
+          "77,15": 1,
+          "78,15": 1,
+          "79,15": 36,
+          "0,16": 36,
+          "1,16": 36,
+          "2,16": 36,
+          "3,16": 36,
+          "4,16": 36,
+          "5,16": 36,
+          "6,16": 36,
+          "7,16": 36,
+          "8,16": 36,
+          "9,16": 36,
+          "10,16": 36,
+          "11,16": 36,
+          "12,16": 36,
+          "13,16": 36,
+          "14,16": 36,
+          "15,16": 36,
+          "16,16": 36,
+          "17,16": 36,
+          "18,16": 36,
+          "19,16": 36,
+          "23,16": 36,
+          "24,16": 36,
+          "25,16": 36,
+          "26,16": 36,
+          "27,16": 36,
+          "28,16": 36,
+          "29,16": 36,
+          "30,16": 36,
+          "31,16": 36,
+          "32,16": 36,
+          "33,16": 36,
+          "34,16": 36,
+          "35,16": 36,
+          "36,16": 36,
+          "37,16": 36,
+          "38,16": 36,
+          "39,16": 36,
+          "43,16": 36,
+          "44,16": 36,
+          "45,16": 36,
+          "46,16": 36,
+          "47,16": 36,
+          "48,16": 36,
+          "49,16": 36,
+          "50,16": 36,
+          "51,16": 36,
+          "52,16": 36,
+          "53,16": 36,
+          "54,16": 36,
+          "55,16": 36,
+          "56,16": 36,
+          "57,16": 36,
+          "58,16": 36,
+          "59,16": 36,
+          "60,16": 36,
+          "61,16": 36,
+          "62,16": 36,
+          "63,16": 36,
+          "64,16": 36,
+          "65,16": 36,
+          "69,16": 36,
+          "70,16": 36,
+          "71,16": 36,
+          "72,16": 36,
+          "73,16": 36,
+          "74,16": 36,
+          "75,16": 36,
+          "76,16": 36,
+          "77,16": 36,
+          "78,16": 36,
+          "79,16": 36
+        }
+      },
+      "objects": [
+        {
+          "id": "obj-hero-25",
+          "kindId": "kind-hero",
+          "x": 96,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-26",
+          "kindId": "kind-coin",
+          "x": 192,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-27",
+          "kindId": "kind-coin",
+          "x": 256,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-28",
+          "kindId": "kind-coin",
+          "x": 320,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-spikes-29",
+          "kindId": "kind-spikes",
+          "x": 448,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-30",
+          "kindId": "kind-coin",
+          "x": 640,
+          "y": 352,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-31",
+          "kindId": "kind-coin",
+          "x": 672,
+          "y": 352,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-32",
+          "kindId": "kind-coin",
+          "x": 704,
+          "y": 352,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-slime-33",
+          "kindId": "kind-slime",
+          "x": 832,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-heart-34",
+          "kindId": "kind-heart",
+          "x": 1056,
+          "y": 352,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-35",
+          "kindId": "kind-coin",
+          "x": 1088,
+          "y": 384,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-36",
+          "kindId": "kind-coin",
+          "x": 1120,
+          "y": 384,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-37",
+          "kindId": "kind-coin",
+          "x": 1280,
+          "y": 352,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-38",
+          "kindId": "kind-coin",
+          "x": 1312,
+          "y": 352,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-39",
+          "kindId": "kind-coin",
+          "x": 1344,
+          "y": 352,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-spikes-40",
+          "kindId": "kind-spikes",
+          "x": 1600,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-spikes-41",
+          "kindId": "kind-spikes",
+          "x": 1632,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-42",
+          "kindId": "kind-coin",
+          "x": 1440,
+          "y": 288,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-43",
+          "kindId": "kind-coin",
+          "x": 1472,
+          "y": 288,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-44",
+          "kindId": "kind-coin",
+          "x": 1824,
+          "y": 384,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-45",
+          "kindId": "kind-coin",
+          "x": 1856,
+          "y": 384,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-46",
+          "kindId": "kind-coin",
+          "x": 1888,
+          "y": 384,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-47",
+          "kindId": "kind-coin",
+          "x": 2112,
+          "y": 352,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-48",
+          "kindId": "kind-coin",
+          "x": 2144,
+          "y": 352,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-49",
+          "kindId": "kind-coin",
+          "x": 2176,
+          "y": 352,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-slime-50",
+          "kindId": "kind-slime",
+          "x": 2304,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-plat-51",
+          "kindId": "kind-platform",
+          "x": 256,
+          "y": 288,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-52",
+          "kindId": "kind-coin",
+          "x": 288,
+          "y": 256,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-53",
+          "kindId": "kind-coin",
+          "x": 320,
+          "y": 256,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-coin-54",
+          "kindId": "kind-coin",
+          "x": 352,
+          "y": 256,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        },
+        {
+          "id": "obj-flag-55",
+          "kindId": "kind-flag",
+          "x": 2432,
+          "y": 448,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        }
+      ],
+      "ui": [
+        {
+          "id": "ui-l2-score",
+          "name": "Score",
+          "type": "text",
+          "x": 16,
+          "y": 12,
+          "anchor": "tl",
+          "text": "Score: {Score}",
+          "style": {
+            "size": 28,
+            "color": "#ffffff",
+            "font": "bold"
+          },
+          "hidden": false
+        },
+        {
+          "id": "ui-l2-lives",
+          "name": "Lives",
+          "type": "text",
+          "x": -16,
+          "y": 12,
+          "anchor": "tr",
+          "text": "Lives: {Lives}",
+          "style": {
+            "size": 28,
+            "color": "#ffd6e0",
+            "font": "bold"
+          },
+          "hidden": false
+        }
+      ],
+      "rules": [
+        {
+          "id": "rule-l2-start",
+          "enabled": true,
+          "trigger": {
+            "type": "sceneStart"
+          },
+          "conditions": {
+            "join": "all",
+            "items": []
+          },
+          "actions": [
+            {
+              "type": "showText",
+              "text": "Level 2",
+              "seconds": {
+                "lit": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "rule-l2-flag",
+          "enabled": true,
+          "trigger": {
+            "type": "touches",
+            "a": {
+              "t": "any",
+              "kindId": "kind-hero"
+            },
+            "b": {
+              "t": "any",
+              "kindId": "kind-flag"
+            }
+          },
+          "conditions": {
+            "join": "all",
+            "items": []
+          },
+          "actions": [
+            {
+              "type": "playSound",
+              "assetId": "builtin:sfx/win"
+            },
+            {
+              "type": "changeScene",
+              "sceneId": "scene-win"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scene-win",
+      "name": "You Win",
+      "width": 960,
+      "height": 540,
+      "background": {
+        "color": "#2e7d32"
+      },
+      "tileLayer": {
+        "tileSetId": null,
+        "cellSize": 32,
+        "cells": {}
+      },
+      "objects": [],
+      "ui": [
+        {
+          "id": "ui-scene-win-title",
+          "name": "Title",
+          "type": "text",
+          "x": 0,
+          "y": -90,
+          "anchor": "c",
+          "text": "You win!",
+          "style": {
+            "size": 72,
+            "color": "#ffe066",
+            "font": "bold"
+          },
+          "hidden": false
+        },
+        {
+          "id": "ui-scene-win-score",
+          "name": "Final score",
+          "type": "text",
+          "x": 0,
+          "y": -10,
+          "anchor": "c",
+          "text": "Score: {Score}",
+          "style": {
+            "size": 32,
+            "color": "#ffffff",
+            "font": "round"
+          },
+          "hidden": false
+        },
+        {
+          "id": "ui-scene-win-again",
+          "name": "Play again",
+          "type": "button",
+          "x": 0,
+          "y": 80,
+          "anchor": "c",
+          "text": "Play again",
+          "style": {
+            "size": 24,
+            "color": "#ffffff",
+            "font": "bold"
+          },
+          "lookId": "builtin:img/button_green",
+          "hidden": false
+        }
+      ],
+      "rules": [
+        {
+          "id": "rule-scene-win-again",
+          "enabled": true,
+          "trigger": {
+            "type": "clicked",
+            "target": {
+              "t": "ui",
+              "id": "ui-scene-win-again"
+            }
+          },
+          "conditions": {
+            "join": "all",
+            "items": []
+          },
+          "actions": [
+            {
+              "type": "changeValue",
+              "value": {
+                "valueId": "value-score"
+              },
+              "op": "set",
+              "amount": {
+                "lit": 0
+              }
+            },
+            {
+              "type": "changeValue",
+              "value": {
+                "valueId": "value-lives"
+              },
+              "op": "set",
+              "amount": {
+                "lit": 3
+              }
+            },
+            {
+              "type": "changeScene",
+              "sceneId": "scene-level1"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scene-gameover",
+      "name": "Game Over",
+      "width": 960,
+      "height": 540,
+      "background": {
+        "color": "#3a1c2b"
+      },
+      "tileLayer": {
+        "tileSetId": null,
+        "cellSize": 32,
+        "cells": {}
+      },
+      "objects": [],
+      "ui": [
+        {
+          "id": "ui-scene-gameover-title",
+          "name": "Title",
+          "type": "text",
+          "x": 0,
+          "y": -90,
+          "anchor": "c",
+          "text": "Game over",
+          "style": {
+            "size": 72,
+            "color": "#ff8a8a",
+            "font": "bold"
+          },
+          "hidden": false
+        },
+        {
+          "id": "ui-scene-gameover-score",
+          "name": "Final score",
+          "type": "text",
+          "x": 0,
+          "y": -10,
+          "anchor": "c",
+          "text": "Score: {Score}",
+          "style": {
+            "size": 32,
+            "color": "#ffffff",
+            "font": "round"
+          },
+          "hidden": false
+        },
+        {
+          "id": "ui-scene-gameover-again",
+          "name": "Play again",
+          "type": "button",
+          "x": 0,
+          "y": 80,
+          "anchor": "c",
+          "text": "Try again",
+          "style": {
+            "size": 24,
+            "color": "#ffffff",
+            "font": "bold"
+          },
+          "lookId": "builtin:img/button_green",
+          "hidden": false
+        }
+      ],
+      "rules": [
+        {
+          "id": "rule-scene-gameover-again",
+          "enabled": true,
+          "trigger": {
+            "type": "clicked",
+            "target": {
+              "t": "ui",
+              "id": "ui-scene-gameover-again"
+            }
+          },
+          "conditions": {
+            "join": "all",
+            "items": []
+          },
+          "actions": [
+            {
+              "type": "changeValue",
+              "value": {
+                "valueId": "value-score"
+              },
+              "op": "set",
+              "amount": {
+                "lit": 0
+              }
+            },
+            {
+              "type": "changeValue",
+              "value": {
+                "valueId": "value-lives"
+              },
+              "op": "set",
+              "amount": {
+                "lit": 3
+              }
+            },
+            {
+              "type": "changeScene",
+              "sceneId": "scene-level1"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "kinds": [
+    {
+      "id": "kind-hero",
+      "name": "Hero",
+      "lookId": "builtin:img/hero",
+      "size": {
+        "w": 32,
+        "h": 32
+      },
+      "stickers": [
+        {
+          "id": "st-hero-move",
+          "type": "platformer",
+          "settings": {
+            "speed": 200,
+            "jumpHeight": 100,
+            "gravity": 1400,
+            "airControl": 0.8,
+            "coyoteMs": 100,
+            "jumpBufferMs": 100,
+            "keys": "both",
+            "idleLook": "builtin:img/hero",
+            "walkLook": "builtin:img/hero_walk",
+            "jumpLook": "builtin:img/hero_jump"
+          }
+        },
+        {
+          "id": "st-hero-health",
+          "type": "health",
+          "settings": {
+            "max": 3,
+            "invincibleMs": 1000,
+            "flash": true
+          }
+        },
+        {
+          "id": "st-hero-camera",
+          "type": "cameraFollow",
+          "settings": {
+            "smoothing": 0.15,
+            "deadzone": 32,
+            "clampToScene": true
+          }
+        }
+      ],
+      "values": [],
+      "rules": [
+        {
+          "id": "rule-hero-jump",
+          "enabled": true,
+          "trigger": {
+            "type": "sticker",
+            "target": {
+              "t": "self"
+            },
+            "event": "jumps"
+          },
+          "conditions": {
+            "join": "all",
+            "items": []
+          },
+          "actions": [
+            {
+              "type": "playSound",
+              "assetId": "builtin:sfx/jump"
+            }
+          ]
+        },
+        {
+          "id": "rule-hero-hurt",
+          "enabled": true,
+          "trigger": {
+            "type": "sticker",
+            "target": {
+              "t": "self"
+            },
+            "event": "hurt"
+          },
+          "conditions": {
+            "join": "all",
+            "items": []
+          },
+          "actions": [
+            {
+              "type": "playSound",
+              "assetId": "builtin:sfx/hurt"
+            },
+            {
+              "type": "shakeCamera",
+              "seconds": {
+                "lit": 0.2
+              }
+            }
+          ]
+        },
+        {
+          "id": "rule-hero-dies",
+          "enabled": true,
+          "trigger": {
+            "type": "sticker",
+            "target": {
+              "t": "self"
+            },
+            "event": "outOfHealth"
+          },
+          "conditions": {
+            "join": "all",
+            "items": []
+          },
+          "actions": [
+            {
+              "type": "changeValue",
+              "value": {
+                "valueId": "value-lives"
+              },
+              "op": "subtract",
+              "amount": {
+                "lit": 1
+              }
+            },
+            {
+              "type": "playSound",
+              "assetId": "builtin:sfx/lose"
+            },
+            {
+              "type": "restartScene"
+            }
+          ]
+        },
+        {
+          "id": "rule-hero-falls",
+          "enabled": true,
+          "trigger": {
+            "type": "leavesScene",
+            "target": {
+              "t": "self"
+            }
+          },
+          "conditions": {
+            "join": "all",
+            "items": []
+          },
+          "actions": [
+            {
+              "type": "changeValue",
+              "value": {
+                "valueId": "value-lives"
+              },
+              "op": "subtract",
+              "amount": {
+                "lit": 1
+              }
+            },
+            {
+              "type": "playSound",
+              "assetId": "builtin:sfx/lose"
+            },
+            {
+              "type": "restartScene"
+            }
+          ]
+        }
+      ],
+      "layer": 2,
+      "hitbox": {
+        "x": 6,
+        "y": 4,
+        "w": 20,
+        "h": 28
+      }
+    },
+    {
+      "id": "kind-coin",
+      "name": "Coin",
+      "lookId": "builtin:img/coin",
+      "size": {
+        "w": 32,
+        "h": 32
+      },
+      "stickers": [
+        {
+          "id": "st-coin-collect",
+          "type": "collectible",
+          "settings": {
+            "collectedBy": null,
+            "sound": "builtin:sfx/coin",
+            "disappear": true
+          }
+        },
+        {
+          "id": "st-coin-spin",
+          "type": "animate",
+          "settings": {
+            "lookId": null,
+            "fps": 4,
+            "loop": true
+          }
+        }
+      ],
+      "values": [],
+      "rules": [
+        {
+          "id": "rule-coin-score",
+          "enabled": true,
+          "trigger": {
+            "type": "sticker",
+            "target": {
+              "t": "self"
+            },
+            "event": "collected"
+          },
+          "conditions": {
+            "join": "all",
+            "items": []
+          },
+          "actions": [
+            {
+              "type": "changeValue",
+              "value": {
+                "valueId": "value-score"
+              },
+              "op": "add",
+              "amount": {
+                "lit": 1
+              }
+            }
+          ]
+        }
+      ],
+      "layer": 1,
+      "hitbox": {
+        "x": 6,
+        "y": 6,
+        "w": 20,
+        "h": 20
+      }
+    },
+    {
+      "id": "kind-slime",
+      "name": "Slime",
+      "lookId": "builtin:img/slime",
+      "size": {
+        "w": 32,
+        "h": 32
+      },
+      "stickers": [
+        {
+          "id": "st-slime-fall",
+          "type": "falls",
+          "settings": {
+            "gravity": 1400,
+            "maxFall": 900
+          }
+        },
+        {
+          "id": "st-slime-walk",
+          "type": "patrol",
+          "settings": {
+            "distance": 96,
+            "speed": 50,
+            "axis": "x",
+            "turnAtEdges": true
+          }
+        },
+        {
+          "id": "st-slime-hurt",
+          "type": "hurts",
+          "settings": {
+            "damage": 1,
+            "knockback": 250,
+            "target": null
+          }
+        },
+        {
+          "id": "st-slime-anim",
+          "type": "animate",
+          "settings": {
+            "lookId": null,
+            "fps": 4,
+            "loop": true
+          }
+        }
+      ],
+      "values": [],
+      "rules": [],
+      "layer": 1,
+      "hitbox": {
+        "x": 2,
+        "y": 12,
+        "w": 28,
+        "h": 20
+      }
+    },
+    {
+      "id": "kind-spikes",
+      "name": "Spikes",
+      "lookId": "builtin:img/spikes",
+      "size": {
+        "w": 32,
+        "h": 32
+      },
+      "stickers": [
+        {
+          "id": "st-spikes-hurt",
+          "type": "hurts",
+          "settings": {
+            "damage": 1,
+            "knockback": 300,
+            "target": null
+          }
+        }
+      ],
+      "values": [],
+      "rules": [],
+      "layer": 0,
+      "hitbox": {
+        "x": 2,
+        "y": 16,
+        "w": 28,
+        "h": 16
+      }
+    },
+    {
+      "id": "kind-flag",
+      "name": "Flag",
+      "lookId": "builtin:img/flag",
+      "size": {
+        "w": 32,
+        "h": 32
+      },
+      "stickers": [
+        {
+          "id": "st-flag-wave",
+          "type": "animate",
+          "settings": {
+            "lookId": null,
+            "fps": 3,
+            "loop": true
+          }
+        }
+      ],
+      "values": [],
+      "rules": [],
+      "layer": 0
+    },
+    {
+      "id": "kind-heart",
+      "name": "Heart",
+      "lookId": "builtin:img/heart",
+      "size": {
+        "w": 32,
+        "h": 32
+      },
+      "stickers": [
+        {
+          "id": "st-heart-collect",
+          "type": "collectible",
+          "settings": {
+            "collectedBy": null,
+            "sound": "builtin:sfx/powerup",
+            "disappear": true
+          }
+        }
+      ],
+      "values": [],
+      "rules": [
+        {
+          "id": "rule-heart-life",
+          "enabled": true,
+          "trigger": {
+            "type": "sticker",
+            "target": {
+              "t": "self"
+            },
+            "event": "collected"
+          },
+          "conditions": {
+            "join": "all",
+            "items": []
+          },
+          "actions": [
+            {
+              "type": "changeValue",
+              "value": {
+                "valueId": "value-lives"
+              },
+              "op": "add",
+              "amount": {
+                "lit": 1
+              }
+            },
+            {
+              "type": "showText",
+              "text": "+1 life!",
+              "seconds": {
+                "lit": 1.5
+              }
+            }
+          ]
+        }
+      ],
+      "layer": 1,
+      "hitbox": {
+        "x": 4,
+        "y": 4,
+        "w": 24,
+        "h": 24
+      }
+    },
+    {
+      "id": "kind-platform",
+      "name": "Moving Platform",
+      "lookId": "builtin:img/platform",
+      "size": {
+        "w": 96,
+        "h": 32
+      },
+      "stickers": [
+        {
+          "id": "st-plat-solid",
+          "type": "solid",
+          "settings": {
+            "oneWay": true
+          }
+        },
+        {
+          "id": "st-plat-move",
+          "type": "patrol",
+          "settings": {
+            "distance": 192,
+            "speed": 60,
+            "axis": "x",
+            "turnAtEdges": false
+          }
+        }
+      ],
+      "values": [],
+      "rules": [],
+      "layer": 0,
+      "hitbox": {
+        "x": 0,
+        "y": 0,
+        "w": 96,
+        "h": 16
+      }
+    }
+  ],
+  "values": [
+    {
+      "id": "value-score",
+      "name": "Score",
+      "scope": "game",
+      "type": "number",
+      "start": 0,
+      "min": 0,
+      "remember": false
+    },
+    {
+      "id": "value-lives",
+      "name": "Lives",
+      "scope": "game",
+      "type": "number",
+      "start": 3,
+      "min": 0,
+      "remember": false
+    }
+  ],
+  "rules": [
+    {
+      "id": "rule-game-over",
+      "enabled": true,
+      "trigger": {
+        "type": "valueReaches",
+        "value": {
+          "valueId": "value-lives"
+        },
+        "amount": {
+          "lit": 0
+        }
+      },
+      "conditions": {
+        "join": "all",
+        "items": []
+      },
+      "actions": [
+        {
+          "type": "changeScene",
+          "sceneId": "scene-gameover"
+        }
+      ]
+    }
+  ],
+  "assets": [],
+  "tileSets": [
+    {
+      "id": "tileset-grass",
+      "name": "Grassland",
+      "assetId": "builtin:tiles/grass",
+      "tileSize": 32,
+      "columns": 8,
+      "count": 145,
+      "solid": [true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false],
+      "oneWay": [false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false]
+    }
+  ],
+  "tourCompleted": false
+}
