@@ -269,6 +269,7 @@ if __name__ == "__main__":
     args = sys.argv[1:]
     if len(args) == 2 and args[0] == "--loop":
         every = float(args[1])
+        print(f"progress updater running every {every:g}s", flush=True)
         while True:
             try:
                 with locked():
