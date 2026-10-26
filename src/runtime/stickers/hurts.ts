@@ -13,6 +13,7 @@ export default defineSticker({
     { key: 'target', kind: 'kind', label: 'Hurts', help: 'Who it hurts.', emptyLabel: 'The player' },
   ],
   onContact(inst, other, s, _state, ctx) {
+    if (inst.firedBy === other.id) return;
     if (!targetKinds(s.target, ctx).includes(other.kindId) || other.dead) return;
     if (!hurt(other, s.damage, ctx)) return;
     if (s.knockback > 0 && !other.dead) {

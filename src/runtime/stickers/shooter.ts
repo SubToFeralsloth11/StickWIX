@@ -44,6 +44,7 @@ export default defineSticker({
     p.facing = dir.x < 0 ? -1 : 1;
     p.dir = dir;
     p.projectile = true;
+    p.firedBy = inst.id;
     p.body = true;
     state.cool = s.cooldownMs / 1000;
     ctx.emit({ type: 'sticker', id: inst.id, event: 'shoots' });

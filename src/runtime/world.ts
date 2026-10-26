@@ -87,7 +87,7 @@ export class World implements WorldApi {
       stickers: [...stickers]
         .sort((a, b) => STEP_ORDER[STICKERS[a.type].category] - STEP_ORDER[STICKERS[b.type].category])
         .map((s) => ({ id: s.id, type: s.type, settings: s.settings, state: {} })),
-      body: false, dead: false, invincible: 0, alpha: 1, pop: 1, projectile: false, bounce: 0, stun: 0,
+      body: false, dead: false, invincible: 0, alpha: 1, pop: 1, projectile: false, firedBy: null, bounce: 0, stun: 0,
       blocked: { left: false, right: false, up: false, down: false }, solid: 'none', dragged: false,
     };
     this.instances.set(id, inst);

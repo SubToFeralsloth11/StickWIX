@@ -45,6 +45,8 @@ export interface Instance {
   pop: number;
   /** Projectile spawned by Shooter: removed when it hits something solid. */
   projectile: boolean;
+  /** Instance id of the Shooter that fired this projectile; its Hurts never hits that shooter. */
+  firedBy: string | null;
   /** Bounciness applied by physics when blocked (Bouncy sticker); 0 = none. */
   bounce: number;
   /** Seconds during which controllers ignore input (knockback). */
