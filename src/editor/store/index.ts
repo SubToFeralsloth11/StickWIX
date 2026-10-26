@@ -96,6 +96,8 @@ export function createEditorStore(): EditorStore {
 
 /** The editor's single store instance. */
 export const editorStore = createEditorStore();
+// Dev builds only: lets end-to-end tests read the document being edited.
+if (import.meta.env.DEV && typeof window !== 'undefined') Object.assign(window, { __stickwixEditor: editorStore });
 
 export function useEditor<T>(selector: (state: EditorState) => T): T {
   return useStore(editorStore, selector);

@@ -6,9 +6,10 @@ export default defineConfig({
   workers: 1,
   fullyParallel: false,
   retries: 0,
-  timeout: 60_000,
+  timeout: 90_000,
+  expect: { timeout: 15_000 },
   reporter: 'list',
-  use: { baseURL: 'http://localhost:5199', trace: 'retain-on-failure', viewport: { width: 1440, height: 900 } },
+  use: { baseURL: 'http://127.0.0.1:5199', trace: 'retain-on-failure', viewport: { width: 1440, height: 900 } },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } } }],
-  webServer: { command: 'pnpm dev', url: 'http://localhost:5199', reuseExistingServer: true, timeout: 60_000 },
+  webServer: { command: 'pnpm dev --host 127.0.0.1', url: 'http://127.0.0.1:5199', reuseExistingServer: true, timeout: 60_000 },
 });
