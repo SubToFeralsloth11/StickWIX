@@ -126,7 +126,7 @@ footer{color:var(--mut);font-size:12px;margin-top:22px;text-align:center}
  <section class="card"><h2>Commits <span id="commitN"></span></h2><ul class="log" id="log"></ul></section>
  <section class="card full"><h2>Checklist <span>tasks.md · click a phase to fold</span></h2><div id="phases"></div></section>
 </main>
-<footer>Refreshes every 5 s · the timer pauses automatically when the agent stops, goes quiet for 10 min (the quiet stretch is not counted), or the updater is not running.</footer>
+<footer>Refreshes every 5 s · the timer pauses when the agent says it stopped, when the updater is not running, or after 30 quiet minutes (that quiet stretch is not counted).</footer>
 </div>
 <div id="zoom" onclick="this.style.display='none'"><img id="zimg" alt=""></div>
 <script>

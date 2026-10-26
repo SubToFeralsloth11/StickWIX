@@ -34,7 +34,7 @@ NOTES = HERE / "notes.json"
 CLOCK = HERE / "clock.json"
 SHOTS = HERE / "shots"
 OUT = HERE / "status.js"
-IDLE_SEC = 10 * 60        # no file activity for this long = agent not working
+IDLE_SEC = 30 * 60        # safety net: no file activity this long = agent forgot `idle` (review rounds are quiet)
 GRACE_SEC = 60            # thinking time still credited after the last file change
 MAX_TICK = 20             # never count more than this between two refreshes
 PRIOR_MIN = 12.0          # minutes per task until a real pace is measured
