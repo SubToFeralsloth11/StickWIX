@@ -2,8 +2,10 @@ import { expect, test, type Page } from '@playwright/test';
 import { pathToFileURL } from 'node:url';
 
 // T133 / SC-004: 200 patrolling, animated objects hold ≥ 58 FPS on average over 10 s,
-// in the editor's Play and in the exported HTML. Run headed on the target laptop for the
-// real measurement (`pnpm test:e2e perf --headed`); headless numbers depend on the host.
+// in the editor's Play and in the exported HTML. Always headed: headless Chromium draws
+// WebGL in software (~44 FPS here while the simulation itself takes 0.3 ms a step), which
+// says nothing about a real laptop GPU.
+test.use({ headless: false });
 const FIXTURE = new URL('../fixtures/stress-200.stickwix', import.meta.url).pathname;
 
 async function averageFps(page: Page, seconds: number) {
