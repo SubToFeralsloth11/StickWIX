@@ -1,6 +1,7 @@
 import { Project, type ProjectInput } from '@/model/schema';
 import { createGame, type Game, type GameOptions } from '@/runtime/game';
 import { NullRenderer } from '@/runtime/render/null-renderer';
+import type { RuntimeEvent } from '@/runtime/types';
 
 type KindSpec = {
   id: string;
@@ -99,3 +100,15 @@ export const obj = (id: string) => ({ t: 'object', id });
 export const any = (kindId: string) => ({ t: 'any', kindId });
 export const that = (kindId: string) => ({ t: 'that', kindId });
 export const self = { t: 'self' };
+
+/** Collects every rule-triggerable event the game emits from now on. */
+export function record(g: Game) {
+  const seen: RuntimeEvent[] = [];
+  g.onEvent((e) => seen.push(e));
+  return seen;
+}
+
+/** Ids of the instances that emitted a sticker event. */
+export function stickerEvents(seen: RuntimeEvent[], event: string) {
+  return seen.flatMap((e) => (e.type === 'sticker' && e.event === event ? [e.id] : []));
+}

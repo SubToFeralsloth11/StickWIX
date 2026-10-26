@@ -63,7 +63,10 @@ export default defineSticker({
       if (jumpKeys.some((k) => pressed.has(k))) state.buffer = s.jumpBufferMs / 1000;
       else state.buffer = (state.buffer as number) - ctx.dt;
       if ((state.buffer as number) > 0 && (state.coyote as number) > 0 && s.jumpHeight > 0) {
-        inst.vy = -Math.sqrt(2 * s.gravity * s.jumpHeight);
+        // Gravity is applied before each move, which loses about v0·dt/2 of height
+        // versus v0²/2g; solving h = v0²/2g - v0·dt/2 makes the apex match jumpHeight.
+        const a = (s.gravity * ctx.dt) / 2;
+        inst.vy = -(a + Math.sqrt(a * a + 2 * s.gravity * s.jumpHeight));
         inst.grounded = false;
         state.buffer = 0;
         state.coyote = 0;
