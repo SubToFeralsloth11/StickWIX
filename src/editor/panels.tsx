@@ -2,10 +2,12 @@ import type { ReactNode } from 'react';
 import type { Project } from '@/model/schema';
 import type { Library } from './assets/library';
 import { AssetBrowser } from './assets/AssetBrowser';
+import { ObjectPresetPanel } from './assets/ObjectPresetPanel';
 import { ScenesPanel } from './scenes/ScenesPanel';
 import { TilePainter } from './tiles/TilePainter';
 import { Inspector, INSPECTOR_SECTIONS } from './inspector/Inspector';
-import { RulesPanel } from './rules/RulesPanel';
+import { RulesPanel, RULES_TOOLBAR } from './rules/RulesPanel';
+import { RulePresetMenu } from './rules/RulePresetMenu';
 import { ValuesPanel } from './values/ValuesPanel';
 import { UILayerEditor, UILayerOverlay } from './ui-layer/UILayerEditor';
 import { CANVAS_OVERLAYS } from './canvas/SceneCanvas';
@@ -27,6 +29,7 @@ export interface PanelTab {
 /** Left sidebar: things you put into the world. */
 export const LEFT_TABS: PanelTab[] = [
   { id: 'art', label: 'Art', render: (p) => <AssetBrowser {...p} /> },
+  { id: 'presets', label: 'Presets', render: (p) => <ObjectPresetPanel {...p} /> },
   { id: 'tiles', label: 'Tiles', render: (p) => <TilePainter {...p} /> },
   { id: 'scenes', label: 'Scenes', render: (p) => <ScenesPanel {...p} /> },
 ];
@@ -41,3 +44,4 @@ export const RIGHT_TABS: PanelTab[] = [
 
 CANVAS_OVERLAYS.push(UILayerOverlay);
 INSPECTOR_SECTIONS.push(KindRulesSection);
+RULES_TOOLBAR.push(RulePresetMenu);
