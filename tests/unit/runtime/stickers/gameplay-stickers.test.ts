@@ -360,7 +360,7 @@ describe('Shooter sticker', () => {
       s.kinds![0]!,
       { id: 'ball', w: 8, h: 8, stickers: [{ type: 'hurts' }] },
       // A second player-controlled Kind standing in the line of fire.
-      { id: 'buddy', stickers: [{ type: 'topdown', settings: { keys: 'wasd' } }] },
+      { id: 'buddy', stickers: [{ type: 'topdown', settings: { keys: 'wasd' } }, { type: 'health', settings: { max: 1 } }] },
     ];
     s.kinds[0]!.stickers![0]!.settings = { keys: 'arrows' };
     s.objects!.push({ id: 'b', kind: 'buddy', x: 300, y: 100 });
@@ -372,5 +372,35 @@ describe('Shooter sticker', () => {
     expect(g.scene.world.get('h')).toBeDefined();
     expect(g.scene.world.get('b')).toBeUndefined();
     expect(g.scene.world.byKind('ball')).toEqual([]);
+  });
+});
+
+describe('Hurts on a fired projectile with no chosen target', () => {
+  const spec: Spec = {
+    kinds: [
+      { id: 'hero', stickers: [{ type: 'topdown' }, { type: 'shooter', settings: { projectile: 'ball', key: 'Space' } }, { type: 'health' }] },
+      { id: 'ball', w: 8, h: 8, stickers: [{ type: 'hurts', settings: { knockback: 0 } }] },
+      { id: 'ghost', stickers: [{ type: 'health', settings: { max: 1 } }] },
+      { id: 'coin' },
+    ],
+    objects: [
+      { id: 'h', kind: 'hero', x: 0, y: 100 },
+      { id: 'c', kind: 'coin', x: 80, y: 100 },
+      { id: 'g', kind: 'ghost', x: 200, y: 100 },
+    ],
+  };
+
+  it('hits things with Health but not plain objects or the shooter', () => {
+    const { game: g } = game(spec);
+    g.input.keyDown('ArrowRight');
+    g.run(1);
+    g.input.keyUp('ArrowRight');
+    g.input.keyDown('Space');
+    g.run(1);
+    g.input.keyUp('Space');
+    g.run(60);
+    expect(g.scene.world.get('c')).toBeDefined();
+    expect(g.scene.world.get('g')).toBeUndefined();
+    expect(g.scene.world.get('h')).toBeDefined();
   });
 });

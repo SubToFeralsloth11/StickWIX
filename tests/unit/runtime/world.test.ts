@@ -25,7 +25,7 @@ describe('World', () => {
       kinds: [{ id: 'dot' }],
       rules: [rule('r1', { type: 'every', seconds: lit(0.0166) }, [{ type: 'create', kindId: 'dot', place: { at: { x: lit(0), y: lit(0) } } }])],
     });
-    for (let i = 0; i < 1100; i++) g.scene.world.spawn('dot', 0, 0);
+    for (let i = 0; i < 1100; i++) g.scene.world.spawn('dot', (i % 40) * 32, Math.floor(i / 40) * 32);
     g.run(10);
     expect(g.scene.world.liveCount()).toBe(1000);
   });

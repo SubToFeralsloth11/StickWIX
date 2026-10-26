@@ -5,22 +5,22 @@ import { keyName, STICKER_EVENT_PHRASE } from '../model/sentence';
 import type { WorldFacts } from './generalise';
 
 /** Facts about the frozen scene, for generalisation. */
+/** Kind and placed-object id of an instance, including ones removed a moment ago. */
+function known(world: World, id: string): { kindId: string; objectId: string | null } | undefined {
+  const i = world.instances.get(id);
+  return i ? { kindId: i.kindId, objectId: i.objectId } : world.removed.get(id);
+}
+
 export function worldFacts(world: World): WorldFacts {
   return {
-    instance: (id) => {
-      const i = world.instances.get(id);
-      return i ? { kindId: i.kindId, objectId: i.objectId } : undefined;
-    },
+    instance: (id) => known(world, id),
     countOfKind: (kindId) => Math.max(world.byKind(kindId).length, world.scene.objects.filter((o) => o.kindId === kindId).length),
   };
 }
 
 /** Plain-English line for the "what just happened" list: "Hero touched Coin", "Space was pressed". */
 export function describeEvent(e: RecentEvent['event'], p: Project, world: World): string {
-  const kind = (instId: string) => {
-    const i = world.instances.get(instId);
-    return p.kinds.find((k) => k.id === i?.kindId)?.name ?? 'something';
-  };
+  const kind = (instId: string) => p.kinds.find((k) => k.id === known(world, instId)?.kindId)?.name ?? 'something';
   const value = (id: string) => [...p.values, ...p.kinds.flatMap((k) => k.values)].find((v) => v.id === id)?.name ?? 'a value';
   switch (e.type) {
     case 'sceneStart': return 'The scene started';

@@ -10,11 +10,17 @@ export default defineSticker({
   fields: [
     { key: 'damage', kind: 'slider', label: 'Damage', help: 'How much health one touch takes away.', min: 0, max: 100, step: 1 },
     { key: 'knockback', kind: 'slider', label: 'Knockback', help: 'How hard it pushes the one it hurts away.', min: 0, max: 1000, step: 10 },
-    { key: 'target', kind: 'kind', label: 'Hurts', help: 'Who it hurts.', emptyLabel: 'The player' },
+    { key: 'target', kind: 'kind', label: 'Hurts', help: 'Who it hurts. Empty: the player, or for projectiles anything with Health except whoever fired it.', emptyLabel: 'The player' },
   ],
   onContact(inst, other, s, _state, ctx) {
-    if (inst.firedBy === other.id) return;
-    if (!targetKinds(s.target, ctx).includes(other.kindId) || other.dead) return;
+    if (inst.firedBy === other.id || other.dead) return;
+    if (s.target) {
+      if (other.kindId !== s.target) return;
+    } else if (inst.projectile) {
+      // A fired projectile with no chosen target hits anything that can take damage, but never its shooter's own Kind.
+      const shooterKind = inst.firedBy ? ctx.world.get(inst.firedBy)?.kindId : undefined;
+      if (other.kindId === shooterKind || !other.stickers.some((x) => x.type === 'health')) return;
+    } else if (!targetKinds(null, ctx).includes(other.kindId)) return;
     if (!hurt(other, s.damage, ctx)) return;
     if (s.knockback > 0 && !other.dead) {
       const a = center(inst);
