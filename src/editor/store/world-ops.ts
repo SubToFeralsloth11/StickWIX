@@ -1,13 +1,9 @@
-import { current, isDraft, type Draft } from 'immer';
+import { current, type Draft } from 'immer';
 import { newId, uniqueName } from '@/model/ids';
 import { newScene } from '@/model/defaults';
 import type { Kind, ObjectInstance, Project, Scene, Sticker, UIElement } from '@/model/schema';
 import { CONTROLLER_TYPES, fillStickerSettings, type StickerType } from '@/model/sticker-settings';
 
-/** Plain copy of a draft (drafts are proxies and cannot be structured-cloned). */
-function snapshot<T>(value: T | Draft<T>): T {
-  return (isDraft(value) ? current(value) : value) as T;
-}
 
 /**
  * Document edits used by the editor. Each takes an Immer draft so callers wrap
@@ -48,7 +44,7 @@ export function moveScene(p: P, sceneId: string, toIndex: number) {
 /** Copies a scene with fresh ids for the scene, its objects, UI and rules. Rules pointing at copied objects are remapped. */
 export function duplicateScene(p: P, sceneId: string): string {
   const src = sceneOf(p, sceneId);
-  const copy: Scene = structuredClone(snapshot(src));
+  const copy: Scene = structuredClone(current(src));
   const remap = new Map<string, string>();
   copy.id = newId('s');
   copy.name = uniqueName(`${src.name} copy`, p.scenes.map((x) => x.name), 40);
@@ -132,7 +128,7 @@ export function duplicateObjects(p: P, sceneId: string, ids: readonly string[], 
   const s = sceneOf(p, sceneId);
   const top = s.objects.reduce((m, o) => Math.max(m, o.layer), 0);
   return objectsIn(p, sceneId, ids).map((o, i) => {
-    const c: ObjectInstance = structuredClone(snapshot(o));
+    const c: ObjectInstance = structuredClone(current(o));
     c.id = newId('o');
     c.x += offset;
     c.y += offset;
@@ -185,7 +181,7 @@ export function addSticker(p: P, kindId: string, type: StickerType, opts: { repl
   if (CONTROLLER_TYPES.includes(type)) {
     const existing = k.stickers.find((s) => CONTROLLER_TYPES.includes(s.type));
     if (existing) {
-      if (!opts.replace) return { ok: false, conflict: structuredClone(snapshot(existing)) as Sticker };
+      if (!opts.replace) return { ok: false, conflict: structuredClone(current(existing)) as Sticker };
       k.stickers = k.stickers.filter((s) => s.id !== existing.id);
     }
   }
