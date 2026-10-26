@@ -43,9 +43,11 @@ export function TourOverlay() {
 
   if (!current) return null;
   const pad = 6;
-  const cardLeft = box ? Math.min(window.innerWidth - 340, Math.max(12, box.x)) : window.innerWidth / 2 - 160;
+  // Big targets (the canvas, a panel): sit in their bottom-right corner so the card never hides the toolbars above.
+  const big = !!box && box.height > window.innerHeight * 0.4;
+  const cardLeft = box ? (big ? Math.max(12, box.right - 340) : Math.min(window.innerWidth - 340, Math.max(12, box.x))) : window.innerWidth / 2 - 160;
   const below = box ? box.bottom + 14 + 200 < window.innerHeight : true;
-  const cardTop = box ? (below ? box.bottom + 14 : Math.max(12, box.top - 214)) : 80;
+  const cardTop = box ? (big ? Math.max(12, box.bottom - 230) : below ? box.bottom + 14 : Math.max(12, box.top - 214)) : 80;
   return (
     <>
       {box && <div className="tour-spot" style={{ left: box.x - pad, top: box.y - pad, width: box.width + pad * 2, height: box.height + pad * 2 }} />}
