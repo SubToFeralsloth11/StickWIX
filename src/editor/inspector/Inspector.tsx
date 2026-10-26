@@ -248,7 +248,8 @@ function ObjectSection({ object, scene, readOnly }: { object: ObjectInstance; sc
 function SceneSettings({ project, lib, scene }: { project: Project; lib: Library; scene: Scene }) {
   const readOnly = useEditor((s) => s.readOnly);
   const { edit } = editorStore.getState();
-  const bgs = lib.images().filter((i) => i.category === 'background');
+  // Built-in backgrounds plus any picture you drew or imported.
+  const bgs = lib.images().filter((i) => i.category === 'background' || i.source !== 'builtin');
   const bgValue = 'color' in scene.background ? 'color' : `${scene.background.assetId}|${scene.background.mode}`;
   return (
     <div className="stack" data-testid="scene-settings">
