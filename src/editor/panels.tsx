@@ -1,3 +1,4 @@
+import { register } from './registry';
 import type { ReactNode } from 'react';
 import type { Project } from '@/model/schema';
 import type { Library } from './assets/library';
@@ -50,9 +51,9 @@ export const RIGHT_TABS: PanelTab[] = [
   { id: 'warnings', label: 'Warnings', badge: (p) => warningCount(p.project), render: (p) => <WarningsPanel {...p} /> },
 ];
 
-CANVAS_OVERLAYS.push(UILayerOverlay);
-INSPECTOR_SECTIONS.push(KindRulesSection);
-RULES_TOOLBAR.push(RulePresetMenu);
-PLAY_OVERLAYS.push(ShowMeOverlay);
-ASSET_TOOLS.push(ArtTools);
-TOP_BAR_EXTRAS.push(HelpMenu);
+register(CANVAS_OVERLAYS, 'ui-layer', UILayerOverlay);
+register(INSPECTOR_SECTIONS, 'kind-rules', KindRulesSection);
+register(RULES_TOOLBAR, 'rule-presets', RulePresetMenu);
+register(PLAY_OVERLAYS, 'show-me', ShowMeOverlay);
+register(ASSET_TOOLS, 'art-tools', ArtTools);
+register(TOP_BAR_EXTRAS, 'help-menu', HelpMenu);
