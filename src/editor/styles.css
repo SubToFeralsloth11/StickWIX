@@ -159,6 +159,7 @@ input[type='checkbox'] { accent-color: var(--mint); width: 16px; height: 16px; }
 @keyframes flash { 50% { box-shadow: 0 0 0 4px var(--sky); } }
 .sentence { font-size: 14.5px; line-height: 2.05; }
 .sentence .w { margin-right: 4px; }
+.sentence .punct { margin-left: -4px; }
 .blank { display: inline-block; border: 0; border-radius: 7px; padding: 0 7px; margin-right: 4px; line-height: 1.6; font-weight: 700; background: var(--card3); border-bottom: 2.5px solid var(--sky); color: var(--ink); }
 .blank:hover { background: #3f3858; }
 .blank.unset { background: #ffd16622; border-bottom-color: var(--sun); color: var(--sun); font-style: italic; animation: pulse 1.6s infinite; }

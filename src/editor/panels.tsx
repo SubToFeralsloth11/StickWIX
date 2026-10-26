@@ -12,6 +12,8 @@ import { ValuesPanel } from './values/ValuesPanel';
 import { UILayerEditor, UILayerOverlay } from './ui-layer/UILayerEditor';
 import { CANVAS_OVERLAYS } from './canvas/SceneCanvas';
 import { KindRulesSection } from './rules/KindRulesSection';
+import { PLAY_OVERLAYS } from './play/PlayView';
+import { ShowMeOverlay } from './play/ShowMeOverlay';
 
 export interface PanelProps {
   project: Project;
@@ -45,3 +47,4 @@ export const RIGHT_TABS: PanelTab[] = [
 CANVAS_OVERLAYS.push(UILayerOverlay);
 INSPECTOR_SECTIONS.push(KindRulesSection);
 RULES_TOOLBAR.push(RulePresetMenu);
+PLAY_OVERLAYS.push(ShowMeOverlay);

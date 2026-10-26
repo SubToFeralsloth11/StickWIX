@@ -78,7 +78,7 @@ export function SentenceCard({ project, lib, rule, owner, state, runaway, flash,
         {s.text}
       </BlankPicker>
     ) : (
-      <span key={i} className="w">
+      <span key={i} className={/^[,.%]|^'s/.test(s.text) ? 'w punct' : 'w'}>
         {s.text}
       </span>
     );
