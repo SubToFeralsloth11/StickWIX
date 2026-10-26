@@ -5,7 +5,7 @@
   "type": "module",
   "description": "No-code 2D game engine: stickers, sentence rules and Show-me.",
   "scripts": {
-    "dev": "vite",
+    "dev": "(test -f public/player-template.html || pnpm build:player) && vite",
     "build:player": "vite build --config vite.player.config.ts && tsx scripts/check-player-size.ts",
     "build": "pnpm build:player && tsc -b && vite build",
     "preview": "vite preview",

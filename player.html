@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="generator" content="StickWIX" />
+    <title>StickWIX game</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #000;
+        overflow: hidden;
+        color: #fff;
+        font: 600 18px/1.4 ui-rounded, 'Trebuchet MS', system-ui, sans-serif;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .player-stage {
+        position: relative;
+        flex: none;
+      }
+      .player-stage canvas {
+        outline: none;
+      }
+      .player-stage.pixel-art canvas {
+        image-rendering: pixelated;
+        image-rendering: crisp-edges;
+      }
+      .player-overlay {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        border: 0;
+        background: rgba(0, 0, 0, 0.55);
+        color: #fff;
+        font: inherit;
+        font-size: 28px;
+        cursor: pointer;
+      }
+      .player-overlay:focus-visible {
+        outline: 3px solid #ffd166;
+        outline-offset: -3px;
+      }
+      .player-message {
+        max-width: 28em;
+        padding: 24px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <script id="stickwix-game" type="application/json">__STICKWIX_GAME__</script>
+    <script type="module" src="/src/player/main.ts"></script>
+  </body>
+</html>
