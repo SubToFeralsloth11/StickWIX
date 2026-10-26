@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { rulesReferencing, type Ref } from '@/model/references';
+import { rulesBrokenByDeleting, type Ref } from '@/model/references';
 import { sentenceText } from '@/model/sentence';
 import { ConfirmDialog } from './ConfirmDialog';
 import { editorStore } from './store';
@@ -30,9 +30,8 @@ export function DeleteConfirm() {
     DELETE_GUARD.request = (ref, run) => {
       const p = editorStore.getState().project;
       if (!p) return run();
-      const affected = rulesReferencing(p, ref);
-      // Deleting a Kind also removes its own rules and objects; only rules elsewhere would break.
-      const breaking = affected.filter((r) => !(ref.kind === 'kind' && r.owner.type === 'kind' && r.owner.id === ref.id));
+      // Includes rules about the Kind's (or scene's) individual objects and screen items, which go with it.
+      const breaking = rulesBrokenByDeleting(p, ref);
       if (!breaking.length) return run();
       setPending({ ref, run, rules: breaking.map((r) => sentenceText(r.rule, p)) });
     };

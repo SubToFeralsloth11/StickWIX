@@ -149,3 +149,30 @@ export function rulesReferencing(p: Project, ref: Ref): LocatedRule[] {
     return false;
   });
 }
+
+/**
+ * Things that disappear together with `ref`: a Kind takes its placed objects
+ * with it, a scene its objects and screen items.
+ */
+export function deletedWith(p: Project, ref: Ref): Ref[] {
+  if (ref.kind === 'kind')
+    return [ref, ...p.scenes.flatMap((s) => s.objects.filter((o) => o.kindId === ref.id).map((o) => ({ kind: 'object' as const, id: o.id })))];
+  if (ref.kind === 'scene') {
+    const s = p.scenes.find((x) => x.id === ref.id);
+    return [ref, ...(s?.objects ?? []).map((o) => ({ kind: 'object' as const, id: o.id })), ...(s?.ui ?? []).map((u) => ({ kind: 'ui' as const, id: u.id }))];
+  }
+  return [ref];
+}
+
+/** Rules that would break if `ref` (and everything deleted with it) were deleted; for the delete warning. */
+export function rulesBrokenByDeleting(p: Project, ref: Ref): LocatedRule[] {
+  const gone = deletedWith(p, ref);
+  const keys = new Set(gone.map((r) => `${r.kind}:${r.id}`));
+  return allRules(p).filter(({ rule, owner }) => {
+    // Rules owned by the deleted Kind or scene go with it rather than breaking.
+    if ((ref.kind === 'kind' && owner.type === 'kind' && owner.id === ref.id) || (ref.kind === 'scene' && owner.type === 'scene' && owner.id === ref.id)) return false;
+    for (const item of walk({ trigger: rule.trigger, conditions: rule.conditions, actions: rule.actions }, []))
+      if (item.ref && keys.has(`${item.ref.kind}:${item.ref.id}`)) return true;
+    return false;
+  });
+}

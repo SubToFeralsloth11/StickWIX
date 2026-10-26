@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Project } from '@/model/schema';
-import { allRules, ruleStates, rulesReferencing } from '@/model/references';
+import { allRules, ruleStates, rulesBrokenByDeleting, rulesReferencing } from '@/model/references';
 import { any, lit, obj, project, rule, that } from '../../fixtures/build';
 
 const add = (valueId: string) => ({ type: 'changeValue', value: { valueId }, op: 'add', amount: lit(1) });
@@ -28,6 +28,18 @@ const referencing = (p: Project, kind: Parameters<typeof rulesReferencing>[1]['k
 describe('rule references (FR-023)', () => {
   it('a complete project has every rule ok', () => {
     expect(states(base())).toEqual({ collect: 'ok', click: 'ok', spawn: 'ok', plain: 'ok' });
+  });
+
+  it('deleting a Kind warns about rules naming one of its objects, not just the Kind itself', () => {
+    const p = base();
+    expect(referencing(p, 'kind', 'hero')).toEqual([]);
+    expect(rulesBrokenByDeleting(p, { kind: 'kind', id: 'hero' }).map((r) => r.rule.id)).toEqual(['collect', 'spawn']);
+  });
+
+  it('deleting a scene warns about rules naming its objects and screen items, but not its own rules', () => {
+    const p = base();
+    p.scenes[0]!.rules.push(rule('own', { type: 'clicked', target: { t: 'ui', id: 'btn' } }, [{ type: 'restartScene' }]) as never);
+    expect(rulesBrokenByDeleting(p, { kind: 'scene', id: 's1' }).map((r) => r.rule.id)).toEqual(['collect', 'click', 'spawn']);
   });
 
   it('deleting a Kind: lists the rules using it and marks them broken', () => {
