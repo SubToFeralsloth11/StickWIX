@@ -1,4 +1,4 @@
-import { anyHeld, defineSticker, keysFor } from './define';
+import { anyHeld, applyMotionLook, defineSticker, keysFor } from './define';
 
 export default defineSticker({
   type: 'topdown',
@@ -22,7 +22,6 @@ export default defineSticker({
   init(inst, _s, state) {
     inst.body = true;
     state.axis = 'x';
-    state.baseLook = inst.lookId;
   },
   step(inst, s, state, ctx) {
     if (inst.dragged) return;
@@ -49,10 +48,6 @@ export default defineSticker({
     inst.vy = (dy / len) * s.speed;
     if (dx !== 0 || dy !== 0) inst.dir = { x: dx / len, y: dy / len };
     if (s.faceMovement && dx !== 0) inst.facing = dx;
-    const next = (dx || dy) && s.walkLook ? s.walkLook : (state.baseLook as string | null);
-    if (inst.lookId !== next) {
-      inst.lookId = next;
-      inst.anim = null;
-    }
+    applyMotionLook(inst, state, (dx || dy) && s.walkLook ? s.walkLook : null);
   },
 });

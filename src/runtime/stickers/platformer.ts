@@ -1,4 +1,4 @@
-import { anyHeld, defineSticker, keysFor } from './define';
+import { anyHeld, applyMotionLook, defineSticker, keysFor } from './define';
 
 const MAX_FALL = 1200;
 
@@ -33,7 +33,6 @@ export default defineSticker({
     state.buffer = 0;
     state.rising = false;
     state.air = 0;
-    state.baseLook = inst.lookId;
   },
   step(inst, s, state, ctx) {
     if (inst.dragged) return;
@@ -79,11 +78,6 @@ export default defineSticker({
     if (inst.vy >= 0) state.rising = false;
     inst.vy = Math.min(MAX_FALL, inst.vy + s.gravity * ctx.dt);
 
-    const look = !inst.grounded ? s.jumpLook : Math.abs(inst.vx) > 1 ? s.walkLook : s.idleLook;
-    const next = look ?? (state.baseLook as string | null);
-    if (inst.lookId !== next) {
-      inst.lookId = next;
-      inst.anim = null;
-    }
+    applyMotionLook(inst, state, !inst.grounded ? s.jumpLook : Math.abs(inst.vx) > 1 ? s.walkLook : s.idleLook);
   },
 });

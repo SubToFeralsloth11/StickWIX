@@ -107,6 +107,34 @@ describe('platformer sticker', () => {
     expect(stickerEvents(seen, 'jumps')).toHaveLength(1);
   });
 
+  it('switches to the standing/running/jumping looks', () => {
+    const { g, h } = hero({ idleLook: 'idle', walkLook: 'walk', jumpLook: 'jump' });
+    g.run(5);
+    expect(h().lookId).toBe('idle');
+    g.input.keyDown('ArrowRight');
+    g.run(5);
+    expect(h().lookId).toBe('walk');
+    g.input.keyDown('Space');
+    g.run(3);
+    expect(h().lookId).toBe('jump');
+  });
+
+  it('keeps its own look when no motion looks are set', () => {
+    const { game: g } = game({
+      tiles: FLOOR,
+      kinds: [{ id: 'hero', lookId: 'builtin:img/hero', stickers: [{ type: 'platformer', settings: { walkLook: 'walk' } }] }],
+      objects: [{ id: 'h', kind: 'hero', x: 64, y: GROUND_Y }],
+    });
+    g.run(5);
+    expect(g.scene.world.get('h')!.lookId).toBe('builtin:img/hero');
+    g.input.keyDown('ArrowRight');
+    g.run(5);
+    expect(g.scene.world.get('h')!.lookId).toBe('walk');
+    g.input.keyUp('ArrowRight');
+    g.run(2);
+    expect(g.scene.world.get('h')!.lookId).toBe('builtin:img/hero');
+  });
+
   describe('coyote time', () => {
     // Ledge: floor only under columns 0..4 (x < 160).
     const LEDGE = [...Array(10).fill(ROW), '#####' + '.'.repeat(35)];

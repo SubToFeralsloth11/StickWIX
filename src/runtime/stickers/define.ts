@@ -50,3 +50,25 @@ export function targetKinds(setting: string | null, ctx: StepCtx): string[] {
 export function center(i: Instance) {
   return { x: i.x + i.hit.x + i.hit.w / 2, y: i.y + i.hit.y + i.hit.h / 2 };
 }
+
+/**
+ * Controller looks (standing/running/jumping). Only switches when the wanted
+ * look changes, so with no looks set the object keeps whatever it has (Animate,
+ * "change look" rules); leaving a set look restores what it had before.
+ */
+export function applyMotionLook(inst: Instance, state: State, want: string | null) {
+  const prev = (state.want ?? null) as string | null;
+  if (want === prev) return;
+  if (prev === null) {
+    state.baseLook = inst.lookId;
+    state.baseAnim = inst.anim;
+  }
+  if (want !== null) {
+    inst.lookId = want;
+    inst.anim = null;
+  } else {
+    inst.lookId = state.baseLook as string | null;
+    inst.anim = state.baseAnim as Instance['anim'];
+  }
+  state.want = want;
+}
