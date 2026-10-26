@@ -4,14 +4,15 @@
  * scene change.
  */
 export class Scheduler {
-  private jobs: { at: number; seq: number; run: () => void }[] = [];
+  private jobs: { at: number; rank: number; seq: number; run: () => void }[] = [];
   private seq = 0;
 
-  at(time: number, run: () => void) {
-    this.jobs.push({ at: time, seq: this.seq++, run });
+  /** `rank` orders jobs due at the same moment (the rule's dispatch order, FR-021). */
+  at(time: number, run: () => void, rank = 0) {
+    this.jobs.push({ at: time, rank, seq: this.seq++, run });
   }
 
-  /** Runs every job due by `now`, earliest first (ties in scheduling order). Jobs may schedule more. */
+  /** Runs every job due by `now`, earliest first (same moment: by rank, then scheduling order). Jobs may schedule more. */
   runDue(now: number) {
     for (let guard = 0; guard < 10_000; guard++) {
       let best = -1;
@@ -19,7 +20,9 @@ export class Scheduler {
         const j = this.jobs[i]!;
         if (j.at > now + 1e-9) continue;
         const cur = best >= 0 ? this.jobs[best]! : undefined;
-        if (!cur || j.at < cur.at || (j.at === cur.at && j.seq < cur.seq)) best = i;
+        // Times within 1e-9 s are the same moment (0.1 + 0.2 vs 0.3).
+        const same = cur !== undefined && Math.abs(j.at - cur.at) <= 1e-9;
+        if (!cur || (!same && j.at < cur.at) || (same && (j.rank < cur.rank || (j.rank === cur.rank && j.seq < cur.seq)))) best = i;
       }
       if (best < 0) return;
       const [job] = this.jobs.splice(best, 1);

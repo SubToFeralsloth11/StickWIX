@@ -13,6 +13,8 @@ export const MAX_DEPTH = 64;
 interface Live {
   rule: Rule;
   owner: RuleOwner;
+  /** Position in dispatch order (game → scene → Kind, each in list order). */
+  order: number;
 }
 
 /**
@@ -30,10 +32,10 @@ export class Interpreter {
 
   constructor(project: Project, sceneId: string, private readonly host: RuleHost) {
     const states = ruleStates(project);
-    for (const { rule, owner } of allRules(project)) {
+    for (const [order, { rule, owner }] of allRules(project).entries()) {
       if (!rule.enabled || states.get(rule.id)?.state !== 'ok') continue;
       if (owner.type === 'scene' && owner.id !== sceneId) continue;
-      const live = { rule, owner };
+      const live = { rule, owner, order };
       const t = rule.trigger.type;
       if (t === 'every' || t === 'after') this.timers.push(live);
       else {
@@ -59,7 +61,7 @@ export class Interpreter {
       this.host.recordTimer(live.rule.id, from + secs);
       for (const b of this.bindingsFor(live, null)) this.runRule(live, b);
       if (tr.type === 'every') this.armTimer(live, from + secs);
-    });
+    }, live.order);
   }
 
   /** Bindings to run a rule with; Kind rules without a subject run once per object of the Kind. */
@@ -83,14 +85,16 @@ export class Interpreter {
     this.depth++;
     try {
       const lookup = (id: string) => this.host.world.instances.get(id);
-      for (const t of types)
-        for (const live of this.byType.get(t) ?? []) {
-          if (this.host.sceneChanging) return;
-          const ownerKind = live.owner.type === 'kind' ? live.owner.id : undefined;
-          const b = matchTrigger(live.rule.trigger, e, ownerKind, this.host, lookup);
-          if (!b) continue;
-          for (const bb of this.bindingsFor(live, b)) this.runRule(live, bb);
-        }
+      // One event can satisfy several trigger types ("changes" and "reaches"); keep list order across them.
+      const lists = types.map((t) => this.byType.get(t) ?? []);
+      const candidates = lists.length === 1 ? lists[0]! : lists.flat().sort((a, b) => a.order - b.order);
+      for (const live of candidates) {
+        if (this.host.sceneChanging) return;
+        const ownerKind = live.owner.type === 'kind' ? live.owner.id : undefined;
+        const b = matchTrigger(live.rule.trigger, e, ownerKind, this.host, lookup);
+        if (!b) continue;
+        for (const bb of this.bindingsFor(live, b)) this.runRule(live, bb);
+      }
     } finally {
       this.depth--;
     }
@@ -114,7 +118,7 @@ export class Interpreter {
             // Skipped if an object the rule was about is gone.
             const gone = [b.self, ...b.that.values()].some((id) => id !== undefined && !this.host.world.get(id));
             if (!gone) this.runFrom(live, b, i + 1);
-          });
+          }, live.order);
           return;
         }
       }
