@@ -6,6 +6,8 @@ import { STEP_ORDER, STICKERS } from './stickers';
 import type { Diagnostic, Instance, LiveSticker, RuntimeEvent, StepCtx, WorldApi } from './types';
 
 export const OBJECT_CAP = 1000;
+/** How many swept instances `World.removed` remembers for Show-me. */
+export const REMOVED_CAP = 512;
 
 export interface WorldOptions {
   project: Project;
@@ -29,6 +31,8 @@ export class World implements WorldApi {
   readonly kinds: Map<string, Kind>;
   private readonly solids = new SpatialHash(128);
   readonly contacts = new Contacts();
+  /** Recently swept instances (destroyed / left the scene), oldest first, so Show-me can still name them. */
+  readonly removed = new Map<string, { kindId: string; objectId: string | null }>();
   private readonly controllerKinds: string[];
   private readonly cap: number;
   private capReported = new Set<string>();
@@ -203,7 +207,13 @@ export class World implements WorldApi {
     this.touch(ctx);
     this.animate(ctx.dt);
     this.cull();
-    for (const [id, i] of this.instances) if (i.dead) this.instances.delete(id);
+    for (const [id, i] of this.instances) {
+      if (!i.dead) continue;
+      this.instances.delete(id);
+      this.removed.delete(id);
+      this.removed.set(id, { kindId: i.kindId, objectId: i.objectId });
+      if (this.removed.size > REMOVED_CAP) this.removed.delete(this.removed.keys().next().value!);
+    }
   }
 
   private rebuildSolids() {
@@ -244,14 +254,16 @@ export class World implements WorldApi {
   private touch(ctx: StepCtx) {
     const live: Instance[] = [];
     for (const i of this.instances.values()) if (!i.dead && !i.hidden) live.push(i);
+    const react = (self: Instance, other: Instance) => {
+      for (const s of self.stickers) {
+        if (self.dead || other.dead) return;
+        STICKERS[s.type].onContact?.(self, other, s.settings, s.state, ctx);
+      }
+    };
     this.contacts.update(live, (a, b) => {
       ctx.emit({ type: 'touch', a: a.id, b: b.id });
-      for (const [self, other] of [[a, b], [b, a]] as const) {
-        for (const s of self.stickers) {
-          if (self.dead || other.dead) return;
-          STICKERS[s.type].onContact?.(self, other, s.settings, s.state, ctx);
-        }
-      }
+      react(a, b);
+      react(b, a);
     });
   }
 

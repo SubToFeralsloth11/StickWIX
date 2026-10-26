@@ -56,4 +56,21 @@ describe('World', () => {
     g.run(200);
     expect(g.values.get('lost')).toBe(1);
   });
+
+  it('remembers swept instances (kind + placed object id) for Show-me, keeping the newest 512', () => {
+    const { game: g } = game({ kinds: [{ id: 'dot' }], objects: [{ id: 'd0', kind: 'dot', x: 0, y: 0 }] });
+    const w = g.scene.world;
+    w.destroy(w.get('d0')!);
+    expect(w.removed.size).toBe(0); // swept at the end of the step
+    g.run(1);
+    expect(w.removed.get('d0')).toEqual({ kindId: 'dot', objectId: 'd0' });
+    const spawned = Array.from({ length: 600 }, () => w.spawn('dot', 0, 0)!);
+    for (const s of spawned) w.destroy(s);
+    g.run(1);
+    expect(w.removed.size).toBe(512);
+    expect(w.removed.has('d0')).toBe(false);
+    expect(w.removed.get(spawned[599]!.id)).toEqual({ kindId: 'dot', objectId: null });
+    expect(w.removed.has(spawned[87]!.id)).toBe(false);
+    expect(w.removed.has(spawned[88]!.id)).toBe(true);
+  });
 });

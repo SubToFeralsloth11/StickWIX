@@ -73,7 +73,8 @@ export class Interpreter {
   /** Feeds an event to every matching rule, depth-first. */
   dispatch(e: RuntimeEvent) {
     const types = triggerTypesFor(e);
-    if (!types.length) return;
+    // No rule listens (e.g. touches between unrelated objects): nothing to do, no allocation.
+    if (!types.some((t) => this.byType.has(t))) return;
     if (this.depth >= MAX_DEPTH) {
       const culprit = this.stack[this.stack.length - 1];
       if (culprit && !this.reported.has(culprit)) {
