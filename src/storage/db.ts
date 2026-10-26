@@ -134,6 +134,21 @@ export async function listAssets(projectId: string): Promise<string[]> {
   return keys.map(([, assetId]) => assetId);
 }
 
+/**
+ * Removes stored blobs the project no longer lists. Deleting a picture keeps
+ * its blob for the rest of the session so undo can bring it back; this runs
+ * when a project is opened, when the undo history starts empty.
+ */
+export async function pruneAssets(projectId: string, keep: Iterable<string>): Promise<string[]> {
+  const wanted = new Set(keep);
+  const tx = (await db()).transaction('assets', 'readwrite');
+  const keys = await tx.store.index('projectId').getAllKeys(projectId);
+  const gone = keys.filter(([, assetId]) => !wanted.has(assetId));
+  for (const k of gone) void tx.store.delete(k);
+  await tx.done;
+  return gone.map(([, assetId]) => assetId);
+}
+
 /** App-wide preferences (e.g. `tourCompleted`), not tied to a project. */
 export async function getPref<T = unknown>(key: string): Promise<T | undefined> {
   return (await (await db()).get('prefs', key)) as T | undefined;

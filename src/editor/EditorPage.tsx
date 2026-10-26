@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getProject, putProject } from '@/storage/db';
+import { getProject, pruneAssets, putProject } from '@/storage/db';
 import { createAutosave, type Autosave } from '@/storage/autosave';
 import { acquireProjectLock, type ProjectLock } from '@/storage/tab-lock';
 import { NewerVersionError } from '@/model/migrations';
@@ -39,6 +39,8 @@ export function EditorPage({ projectId }: { projectId: string }) {
           return;
         }
         editorStore.getState().load(doc, { readOnly: lock.readOnly });
+        // Fresh undo history: blobs of pictures deleted in earlier sessions can't come back, so drop them.
+        if (!lock.readOnly) void pruneAssets(doc.id, doc.assets.map((a) => a.id)).catch(() => {});
         unsub = editorStore.getState().subscribeProject((p) => autosave.schedule(p));
       } catch (e) {
         if (!cancelled) setError(e instanceof NewerVersionError ? e.message : `This game could not be opened: ${String(e)}`);

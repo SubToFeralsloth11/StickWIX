@@ -11,6 +11,7 @@ import {
   getProject,
   listAssets,
   listProjects,
+  pruneAssets,
   putAsset,
   putProject,
   renameProject,
@@ -110,6 +111,15 @@ describe('assets', () => {
     await deleteAsset('p1', 'img');
     expect(await getAsset('p1', 'img')).toBeUndefined();
     expect(await listAssets('p1')).toEqual(['snd']);
+  });
+
+  it('prunes only the blobs a project no longer lists, and leaves other projects alone', async () => {
+    await putAsset('p1', 'kept', blob('a'));
+    await putAsset('p1', 'deleted', blob('b'));
+    await putAsset('p2', 'deleted', blob('c'));
+    expect(await pruneAssets('p1', ['kept'])).toEqual(['deleted']);
+    expect(await listAssets('p1')).toEqual(['kept']);
+    expect(await listAssets('p2')).toEqual(['deleted']);
   });
 });
 

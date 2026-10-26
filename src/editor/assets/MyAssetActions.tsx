@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { assetUsers, deleteAssetFromProject } from '@/model/asset-references';
 import type { Project } from '@/model/schema';
-import { deleteAsset } from '@/storage/db';
 import { ConfirmDialog } from '../ConfirmDialog';
 import { DELETE_GUARD } from '../delete-guard';
 import { openPixelEditor } from '../pixel/PixelEditor';
@@ -22,7 +21,6 @@ export function MyAssetActions({ project, assetId, inline }: { project: Project;
 
   const doDelete = () => {
     editorStore.getState().edit(`Delete ${noun} "${asset.name}"`, (d) => deleteAssetFromProject(d, asset.id));
-    void deleteAsset(project.id, asset.id).catch(() => undefined);
     toast(`Deleted "${asset.name}".`);
   };
 
