@@ -14,6 +14,9 @@ import { CANVAS_OVERLAYS } from './canvas/SceneCanvas';
 import { KindRulesSection } from './rules/KindRulesSection';
 import { PLAY_OVERLAYS } from './play/PlayView';
 import { ShowMeOverlay } from './play/ShowMeOverlay';
+import { WarningsPanel, warningCount } from './warnings/WarningsPanel';
+import { HelpMenu } from './help/HelpMenu';
+import { TOP_BAR_EXTRAS } from './topbar';
 
 export interface PanelProps {
   project: Project;
@@ -42,9 +45,11 @@ export const RIGHT_TABS: PanelTab[] = [
   { id: 'rules', label: 'Rules', render: (p) => <RulesPanel {...p} /> },
   { id: 'values', label: 'Values', render: (p) => <ValuesPanel {...p} /> },
   { id: 'screen', label: 'Screen', render: (p) => <UILayerEditor {...p} /> },
+  { id: 'warnings', label: 'Warnings', badge: (p) => warningCount(p.project), render: (p) => <WarningsPanel {...p} /> },
 ];
 
 CANVAS_OVERLAYS.push(UILayerOverlay);
 INSPECTOR_SECTIONS.push(KindRulesSection);
 RULES_TOOLBAR.push(RulePresetMenu);
 PLAY_OVERLAYS.push(ShowMeOverlay);
+TOP_BAR_EXTRAS.push(HelpMenu);

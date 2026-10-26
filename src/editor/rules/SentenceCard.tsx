@@ -91,7 +91,7 @@ export function SentenceCard({ project, lib, rule, owner, state, runaway, flash,
           if (!g.part || g.part.kind === 'trigger') {
             if (g.part?.kind === 'trigger' && !readOnly)
               return (
-                <span key={gi}>
+                <span key={gi} title={TRIGGERS[rule.trigger.type].help}>
                   <Menu
                     trigger={
                       <button className="blank" title="Change what starts this rule" style={{ borderBottomColor: 'var(--clay)' }}>
@@ -108,7 +108,12 @@ export function SentenceCard({ project, lib, rule, owner, state, runaway, flash,
           }
           const part = g.part;
           return (
-            <span key={gi} className="part" style={{ whiteSpace: 'normal' }}>
+            <span
+              key={gi}
+              className="part"
+              style={{ whiteSpace: 'normal' }}
+              title={part.kind === 'condition' ? CONDITIONS[rule.conditions.items[part.index]!.type].help : ACTIONS[rule.actions[part.index]!.type].help}
+            >
               {body}
               {!readOnly && (part.kind === 'condition' || rule.actions.length > 1) && (
                 <button className="btn small ghost" style={{ padding: '0 4px', color: 'var(--dim)' }} onClick={() => edit(`Remove ${part.kind}`, (d) => R.removePart(d, rule.id, part))} aria-label={`Remove this ${part.kind}`} title={`Remove this ${part.kind === 'condition' ? 'check' : 'action'}`}>

@@ -13,6 +13,7 @@ import { editorStore } from '../store';
 import { addRule } from '../store/rule-ops';
 import { setUI } from '../ui-state';
 import { toast } from '../toast';
+import { noteShowMeRule } from '../tour/tour-state';
 import { RESERVED_KEYS, type PlayOverlayProps } from './PlayView';
 import { ShowMeConfirm } from './ShowMeConfirm';
 
@@ -117,6 +118,7 @@ export function ShowMeOverlay({ game, project, lib, scale, stop }: PlayOverlayPr
     });
     setUI({ focusRuleId: id, rightTab: 'rules' });
     toast('New rule added. It works from the next Play.');
+    noteShowMeRule();
     close();
     if (thenEdit) stop();
   };
