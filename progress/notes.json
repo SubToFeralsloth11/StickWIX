@@ -1,8 +1,15 @@
 {
  "started": 1792963676,
  "working": true,
- "current": "Writing the project document model (Zod schema, types, defaults)",
+ "current": "Full validation: lint, typecheck, unit tests, build, end-to-end",
  "notes": [
-  "Build started: StickWIX, a no-code 2D game engine (stickers, sentence rules, Show-me), 138 tasks across 10 phases."
+  "Full validation green: lint, typecheck, 516 unit tests, production build, 13 end-to-end tests (Chromium).",
+  "SC-004 measured: 200 patrolling, animated objects run at 60.0 FPS in Play and 60.0 FPS in the exported game (simulation 0.27 ms per step).",
+  "Show-me works in the browser: F2 freezes Play, drag a slime to the bin, press + on Lives, and the rule is written for you.",
+  "Rules editor live: build 'When Big cookie is clicked \u2192 Coins goes up by 1' with menus, see Coins on screen in Play. Presets: 3 starters, 24 object presets, 16 rule presets.",
+  "Editor works in the browser: paint tiles, place art, add stickers, Play/Stop (smoke-tested in Chromium).",
+  "Built-in CC0 art and sound pack in: 80+ sprites, 4 tile sets, 16 sounds, 3 music loops (Kenney + Juhani Junkala).",
+  "Headless runtime running: physics, 15 stickers, rule interpreter, scenes; 24 runtime tests passing.",
+  "Storage (IndexedDB, autosave, tab lock) and undo/redo store done: 32 tests passing."
  ]
 }
