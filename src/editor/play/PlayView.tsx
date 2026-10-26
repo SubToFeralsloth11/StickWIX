@@ -65,6 +65,8 @@ export function PlayView({ project, lib }: { project: Project; lib: Library }) {
       canvas.tabIndex = 0;
       canvas.focus();
       g.start();
+      // Dev builds only: lets end-to-end tests read values and objects of the running game.
+      if (import.meta.env.DEV) Object.assign(window, { __stickwixGame: g });
       setGame(g);
     });
     return () => {

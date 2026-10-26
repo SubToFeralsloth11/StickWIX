@@ -4,9 +4,12 @@ import { existingIds, ruleBlanks, type Blank } from './references';
 /** What sort of picker a blank opens in the editor. */
 export type BlankKind = 'target' | 'value' | 'number' | 'operand' | 'key' | 'kind' | 'asset' | 'sound' | 'scene' | 'text' | 'choice' | 'place' | 'point';
 
-export type Segment =
-  | { text: string }
-  | { blank: BlankKind; path: (string | number)[]; text: string; status: 'ok' | 'unset' | 'broken' };
+/** Which part of the rule a segment belongs to (the editor groups parts for remove buttons). */
+export type Part = { kind: 'trigger' } | { kind: 'condition' | 'action'; index: number };
+
+export type Segment = ({ text: string } | { blank: BlankKind; path: (string | number)[]; text: string; status: 'ok' | 'unset' | 'broken' }) & {
+  part?: Part;
+};
 
 export const STICKER_EVENT_PHRASE: Record<StickerEvent, string> = {
   collected: 'is collected',
@@ -61,7 +64,8 @@ export function ruleSegments(rule: Rule, p: Project, names: NameLookup = {}): Se
   const blanks = ruleBlanks(rule, existingIds(p), new Map(p.scenes.flatMap((s) => s.objects.map((o) => [o.id, o.kindId] as const))));
 
   const out: Segment[] = [];
-  const word = (t: string) => out.push({ text: t });
+  let part: Part | undefined;
+  const word = (t: string) => out.push({ text: t, part });
   const statusAt = (path: (string | number)[]): 'ok' | 'unset' | 'broken' => {
     const key = path.join('.');
     const hit = blanks.find((b: Blank) => b.path.join('.') === key || b.path.join('.').startsWith(key + '.'));
@@ -69,7 +73,7 @@ export function ruleSegments(rule: Rule, p: Project, names: NameLookup = {}): Se
   };
   const blank = (kind: BlankKind, path: (string | number)[], text: string | undefined, forceUnset = false) => {
     const status = forceUnset ? 'unset' : statusAt(path);
-    out.push({ blank: kind, path, text: status === 'unset' ? UNSET_TEXT[kind] : (text ?? 'missing'), status });
+    out.push({ blank: kind, path, text: status === 'unset' ? UNSET_TEXT[kind] : (text ?? 'missing'), status, part });
   };
   const missing = '(deleted)';
   const kindName = (id: string) => kinds.get(id) ?? missing;
@@ -77,7 +81,11 @@ export function ruleSegments(rule: Rule, p: Project, names: NameLookup = {}): Se
   const target = (t: Target, path: (string | number)[]) => {
     switch (t.t) {
       case 'object': return blank('target', path, objects.get(t.id) ?? missing);
-      case 'any': return blank('target', path, `any ${kindName(t.kindId)}`);
+      case 'any': {
+        // In actions "any" acts on every object of the Kind (place targets use the first one); conditions check any.
+        const quant = path[0] === 'actions' && !path.includes('atTarget') ? 'every' : 'any';
+        return blank('target', path, `${quant} ${kindName(t.kindId)}`);
+      }
       case 'that': return blank('target', path, `that ${kindName(t.kindId)}`);
       case 'self': return blank('target', path, 'this object');
       case 'ui': return blank('target', path, ui.get(t.id) ?? missing);
@@ -196,16 +204,24 @@ export function ruleSegments(rule: Rule, p: Project, names: NameLookup = {}): Se
     }
   };
 
+  part = { kind: 'trigger' };
   trigger(rule.trigger);
+  part = undefined;
   rule.conditions.items.forEach((c, i) => {
+    part = undefined;
     word(i === 0 ? ', only if' : rule.conditions.join === 'all' ? 'and' : 'or');
+    part = { kind: 'condition', index: i };
     condition(c, ['conditions', 'items', i]);
   });
+  part = undefined;
   word('→');
   rule.actions.forEach((a, i) => {
+    part = undefined;
     if (i > 0) word(i === rule.actions.length - 1 ? (rule.actions.length > 2 ? ', and' : 'and') : ',');
+    part = { kind: 'action', index: i };
     action(a, ['actions', i]);
   });
+  part = undefined;
   word('.');
   return out;
 }

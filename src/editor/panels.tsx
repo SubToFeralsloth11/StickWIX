@@ -4,7 +4,12 @@ import type { Library } from './assets/library';
 import { AssetBrowser } from './assets/AssetBrowser';
 import { ScenesPanel } from './scenes/ScenesPanel';
 import { TilePainter } from './tiles/TilePainter';
-import { Inspector } from './inspector/Inspector';
+import { Inspector, INSPECTOR_SECTIONS } from './inspector/Inspector';
+import { RulesPanel } from './rules/RulesPanel';
+import { ValuesPanel } from './values/ValuesPanel';
+import { UILayerEditor, UILayerOverlay } from './ui-layer/UILayerEditor';
+import { CANVAS_OVERLAYS } from './canvas/SceneCanvas';
+import { KindRulesSection } from './rules/KindRulesSection';
 
 export interface PanelProps {
   project: Project;
@@ -27,4 +32,12 @@ export const LEFT_TABS: PanelTab[] = [
 ];
 
 /** Right sidebar: what things do. */
-export const RIGHT_TABS: PanelTab[] = [{ id: 'inspect', label: 'Inspect', render: (p) => <Inspector {...p} /> }];
+export const RIGHT_TABS: PanelTab[] = [
+  { id: 'inspect', label: 'Inspect', render: (p) => <Inspector {...p} /> },
+  { id: 'rules', label: 'Rules', render: (p) => <RulesPanel {...p} /> },
+  { id: 'values', label: 'Values', render: (p) => <ValuesPanel {...p} /> },
+  { id: 'screen', label: 'Screen', render: (p) => <UILayerEditor {...p} /> },
+];
+
+CANVAS_OVERLAYS.push(UILayerOverlay);
+INSPECTOR_SECTIONS.push(KindRulesSection);

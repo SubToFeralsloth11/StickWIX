@@ -12,6 +12,7 @@ import { openProject } from './App';
 import { deleteObjects, duplicateObjects, moveObjects } from './store/world-ops';
 import { toast } from './toast';
 import { EXPORT_ACTIONS, TOP_BAR_EXTRAS, BACKUP_ACTION } from './topbar';
+import { DeleteConfirm } from './DeleteConfirm';
 
 function Tabs({ tabs, active, onPick, props }: { tabs: PanelTab[]; active: string; onPick: (id: string) => void; props: PanelProps }) {
   const current = tabs.find((t) => t.id === active) ?? tabs[0]!;
@@ -153,6 +154,7 @@ export function Editor({ autosave }: { autosave: Autosave }) {
         ))}
         <SaveStatus autosave={autosave} onBackup={() => BACKUP_ACTION.run?.(project)} />
       </div>
+      <DeleteConfirm />
       {readOnly && (
         <div className="banner" role="alert">
           This game is open in another tab, so it's read-only here. Close the other tab and reload to edit.
