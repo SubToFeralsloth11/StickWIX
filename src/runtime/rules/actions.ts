@@ -148,5 +148,8 @@ export function runAction(a: Action, b: Binding, host: RuleHost): number | null 
       if (s !== null && s > 0) host.camera.shake(s);
       return null;
     }
+    case 'share':
+      host.share(host.values.format(a.text));
+      return null;
   }
 }

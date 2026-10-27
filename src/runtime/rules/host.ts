@@ -16,6 +16,8 @@ export interface RuleHost {
   time: number;
   playSound(assetId: string | null): void;
   showText(text: string, seconds: number): void;
+  /** Hands a message to the system share menu (or clipboard); in the editor it is just shown. */
+  share(text: string): void;
   /** Scene change happens at the end of the step; remaining actions stop. */
   requestScene(sceneId: string | null): void;
   readonly sceneChanging: boolean;

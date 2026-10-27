@@ -17,7 +17,7 @@ describe('help catalogue (FR-038)', () => {
   it('covers every trigger, condition and action type', () => {
     const triggers = ['sceneStart', 'every', 'after', 'key', 'clicked', 'touches', 'valueChanges', 'valueReaches', 'created', 'destroyed', 'leavesScene', 'sticker'];
     const conditions = ['compare', 'count', 'keyHeld', 'touching', 'chance'];
-    const actions = ['moveTo', 'moveBy', 'setSpeed', 'push', 'create', 'destroy', 'show', 'hide', 'changeLook', 'animate', 'changeValue', 'showText', 'playSound', 'wait', 'changeScene', 'restartScene', 'shakeCamera'];
+    const actions = ['moveTo', 'moveBy', 'setSpeed', 'push', 'create', 'destroy', 'show', 'hide', 'changeLook', 'animate', 'changeValue', 'showText', 'playSound', 'wait', 'changeScene', 'restartScene', 'shakeCamera', 'share'];
     for (const t of triggers) expect(ids).toContain(`trigger:${t}`);
     for (const c of conditions) expect(ids).toContain(`condition:${c}`);
     for (const a of actions) expect(ids).toContain(`action:${a}`);

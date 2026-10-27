@@ -62,6 +62,10 @@ export class SceneRuntime implements RuleHost {
   showText(text: string, seconds: number) {
     this.texts.push({ text, until: this.time + seconds });
   }
+  share(text: string) {
+    const shared = this.game.share?.(text);
+    if (!shared) this.showText(text, 3);
+  }
   requestScene(sceneId: string | null) {
     if (this.pending === undefined) this.pending = sceneId;
   }

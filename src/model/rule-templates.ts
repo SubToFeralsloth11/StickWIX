@@ -54,4 +54,5 @@ export const ACTIONS: Record<ActionType, Template<Action>> = {
   changeScene: { label: 'go to another scene', help: 'Switches to another level or screen. Values are kept.', make: () => ({ type: 'changeScene', sceneId: U }) },
   restartScene: { label: 'restart the scene', help: 'Starts this scene again from the beginning.', make: () => ({ type: 'restartScene' }) },
   shakeCamera: { label: 'shake the screen', help: 'Wobbles the screen for a moment, great for hits and explosions.', make: () => ({ type: 'shakeCamera', seconds: { lit: 0.4 } }) },
+  share: { label: 'share a message', help: 'Opens the phone or browser share menu with a message, or copies it.', make: () => ({ type: 'share', text: 'I scored {Score}!' }) },
 };

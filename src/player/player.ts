@@ -54,6 +54,27 @@ export function letterbox(win: { w: number; h: number }, screen: { w: number; h:
 }
 
 /**
+ * Share action in an exported game: the system share sheet (phones), else the
+ * clipboard with a "Copied!" note. False when neither exists, so the game
+ * shows the message instead. A cancelled share sheet is not an error.
+ */
+export function shareText(win: Window, text: string, note: (msg: string) => void): boolean {
+  const nav = win.navigator;
+  if (typeof nav.share === 'function') {
+    nav.share({ text }).catch(() => undefined);
+    return true;
+  }
+  if (nav.clipboard?.writeText) {
+    nav.clipboard.writeText(text).then(
+      () => note('Copied! Paste it anywhere.'),
+      () => note('Sharing is blocked here'),
+    );
+    return true;
+  }
+  return false;
+}
+
+/**
  * Boots an exported game: validates the payload, draws the start scene behind
  * a "Click to play" overlay, and starts the loop (and audio, which browsers
  * only allow after a gesture) on the first click or key press.
@@ -90,6 +111,7 @@ export async function bootPlayer(doc: Document, deps: PlayerDeps): Promise<Game 
     audio,
     remember: localStorageRemember(project.id, deps.storage ?? win.localStorage),
     assetInfo,
+    share: (text) => shareText(win, text, (note) => game.scene.showText(note, 2)),
   });
 
   const fit = () => {
@@ -111,7 +133,7 @@ export async function bootPlayer(doc: Document, deps: PlayerDeps): Promise<Game 
   const overlay = doc.createElement('button');
   overlay.type = 'button';
   overlay.className = 'player-overlay';
-  overlay.textContent = 'Click to play';
+  overlay.textContent = win.matchMedia?.('(pointer: coarse)').matches ? 'Tap to play' : 'Click to play';
   stage.appendChild(overlay);
   const play = (e: Event) => {
     if (e.type === 'keydown') e.preventDefault();

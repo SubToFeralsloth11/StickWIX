@@ -209,6 +209,7 @@ export function ruleSegments(rule: Rule, p: Project, names: NameLookup = {}): Se
       case 'changeScene': word('go to scene'); ref('scene', a.sceneId, [...P, 'sceneId'], (id) => scenes.get(id)); break;
       case 'restartScene': word('restart this scene'); break;
       case 'shakeCamera': word('shake the screen for'); seconds(a.seconds, [...P, 'seconds']); break;
+      case 'share': word('share'); blank('text', [...P, 'text'], `"${a.text}"`, a.text === ''); break;
     }
   };
 

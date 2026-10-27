@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="generator" content="StickWIX" />
     <title>StickWIX game</title>
     <style>
@@ -14,11 +14,18 @@
         overflow: hidden;
         color: #fff;
         font: 600 18px/1.4 ui-rounded, 'Trebuchet MS', system-ui, sans-serif;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior: none;
       }
       body {
         display: flex;
         align-items: center;
         justify-content: center;
+        /* The visible height on phones, where 100% includes space under the browser bars. */
+        height: 100dvh;
       }
       .player-stage {
         position: relative;
@@ -26,6 +33,8 @@
       }
       .player-stage canvas {
         outline: none;
+        /* Taps go to the game: no scrolling, pinch zoom or double-tap zoom delay. */
+        touch-action: none;
       }
       .player-stage.pixel-art canvas {
         image-rendering: pixelated;

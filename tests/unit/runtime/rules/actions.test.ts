@@ -225,4 +225,15 @@ describe('actions (FR-018)', () => {
     g.run(40);
     expect(Math.hypot(g.scene.camera.offset.x, g.scene.camera.offset.y)).toBe(0);
   });
+
+  it('share hands the filled-in message out, and shows it when nothing can take it', () => {
+    const sent: string[] = [];
+    const set = { type: 'changeValue', value: { valueId: 'score' }, op: 'set', amount: lit(7) };
+    const shared = start([set, { type: 'share', text: 'I got {Score}' }], {}, { share: (t) => (sent.push(t), true) });
+    expect(sent).toEqual(['I got 7']);
+    expect(shared.g.view().texts).toEqual([]);
+
+    const refused = start([set, { type: 'share', text: 'I got {Score}' }], {}, { share: () => false });
+    expect(refused.g.view().texts.map((t) => t.text)).toEqual(['I got 7']);
+  });
 });

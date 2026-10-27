@@ -19,6 +19,8 @@ export interface GameOptions {
   /** Scene to start in (defaults to the project's start scene). */
   sceneId?: string;
   onDiagnostic?: (d: Diagnostic) => void;
+  /** Sends a "share" action's message out of the game; returns false when nothing could take it, so the game shows it instead. */
+  share?: (text: string) => boolean;
 }
 
 /**
@@ -36,6 +38,7 @@ export class Game {
   readonly audio: AudioAdapter;
   readonly assetInfo: AssetInfo;
   readonly screen: { w: number; h: number };
+  readonly share: ((text: string) => boolean) | undefined;
   readonly dt = STEP;
   scene: SceneRuntime;
   totalTime = 0;
@@ -53,6 +56,7 @@ export class Game {
     this.audio = opts.audio ?? silentAudio;
     this.renderer = opts.renderer;
     this.assetInfo = opts.assetInfo ?? (() => undefined);
+    this.share = opts.share;
     this.screen = { w: this.project.settings.screenWidth, h: this.project.settings.screenHeight };
     this.values = new Values(this.project, (e) => this.emit(e), opts.remember ?? null);
     this.loop = new FixedLoop(() => this.step());

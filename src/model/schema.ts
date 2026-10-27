@@ -107,6 +107,7 @@ export const Action = z.discriminatedUnion('type', [
   z.object({ type: z.literal('changeScene'), sceneId: RefBlank }),
   z.object({ type: z.literal('restartScene') }),
   z.object({ type: z.literal('shakeCamera'), seconds: Num }),
+  z.object({ type: z.literal('share'), text: z.string().max(200) }),
 ]);
 export type Action = z.infer<typeof Action>;
 export type ActionType = Action['type'];
