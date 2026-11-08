@@ -1,0 +1,732 @@
+{
+  "id": "starter-clicker",
+  "schemaVersion": 1,
+  "name": "Cookie Clicker",
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "settings": {
+    "screenWidth": 960,
+    "screenHeight": 540,
+    "pixelArt": true,
+    "showMeKey": "F2",
+    "backgroundMusic": "builtin:music/chill"
+  },
+  "startSceneId": "scene-bakery",
+  "scenes": [
+    {
+      "id": "scene-bakery",
+      "name": "Bakery",
+      "width": 960,
+      "height": 540,
+      "background": {
+        "color": "#4a2f5e"
+      },
+      "tileLayer": {
+        "tileSetId": null,
+        "cellSize": 32,
+        "cells": {}
+      },
+      "objects": [
+        {
+          "id": "obj-cookie",
+          "kindId": "kind-cookie",
+          "x": 416,
+          "y": 206,
+          "rotation": 0,
+          "scaleX": 1,
+          "scaleY": 1,
+          "layer": 0,
+          "overrides": {}
+        }
+      ],
+      "ui": [
+        {
+          "id": "ui-coins",
+          "name": "Coins",
+          "type": "text",
+          "x": 0,
+          "y": 24,
+          "anchor": "t",
+          "text": "Coins: {Coins}",
+          "style": {
+            "size": 48,
+            "color": "#ffe066",
+            "font": "bold"
+          },
+          "hidden": false
+        },
+        {
+          "id": "ui-rates",
+          "name": "Rates",
+          "type": "text",
+          "x": 0,
+          "y": 92,
+          "anchor": "t",
+          "text": "Per click: {Per Click}   Helpers: {Auto} per second",
+          "style": {
+            "size": 22,
+            "color": "#ffffff",
+            "font": "round"
+          },
+          "hidden": false
+        },
+        {
+          "id": "ui-goal",
+          "name": "Goal",
+          "type": "text",
+          "x": 16,
+          "y": 16,
+          "anchor": "tl",
+          "text": "Goal: 100 coins",
+          "style": {
+            "size": 20,
+            "color": "#c9f7c3",
+            "font": "round"
+          },
+          "hidden": false
+        },
+        {
+          "id": "ui-upgrade",
+          "name": "Upgrade",
+          "type": "button",
+          "x": 24,
+          "y": -24,
+          "anchor": "bl",
+          "text": "Bigger clicks: {Upgrade Cost} coins",
+          "style": {
+            "size": 20,
+            "color": "#ffffff",
+            "font": "bold"
+          },
+          "lookId": "builtin:img/button_green",
+          "hidden": false
+        },
+        {
+          "id": "ui-helper",
+          "name": "Helper",
+          "type": "button",
+          "x": -24,
+          "y": -24,
+          "anchor": "br",
+          "text": "Hire a helper: {Helper Cost} coins",
+          "style": {
+            "size": 20,
+            "color": "#ffffff",
+            "font": "bold"
+          },
+          "lookId": "builtin:img/button_blue",
+          "hidden": false
+        },
+        {
+          "id": "ui-help",
+          "name": "Help",
+          "type": "text",
+          "x": 0,
+          "y": -80,
+          "anchor": "b",
+          "text": "Click the cookie!",
+          "style": {
+            "size": 20,
+            "color": "#ffffff",
+            "font": "round"
+          },
+          "hidden": false
+        }
+      ],
+      "rules": [
+        {
+          "id": "rule-buy-upgrade",
+          "enabled": true,
+          "trigger": {
+            "type": "clicked",
+            "target": {
+              "t": "ui",
+              "id": "ui-upgrade"
+            }
+          },
+          "conditions": {
+            "join": "all",
+            "items": [
+              {
+                "type": "compare",
+                "value": {
+                  "valueId": "value-coins"
+                },
+                "op": "ge",
+                "to": {
+                  "ref": {
+                    "valueId": "value-upgrade-cost"
+                  }
+                }
+              }
+            ]
+          },
+          "actions": [
+            {
+              "type": "changeValue",
+              "value": {
+                "valueId": "value-coins"
+              },
+              "op": "subtract",
+              "amount": {
+                "ref": {
+                  "valueId": "value-upgrade-cost"
+                }
+              }
+            },
+            {
+              "type": "changeValue",
+              "value": {
+                "valueId": "value-per-click"
+              },
+              "op": "add",
+              "amount": {
+                "lit": 1
+              }
+            },
+            {
+              "type": "changeValue",
+              "value": {
+                "valueId": "value-upgrade-cost"
+              },
+              "op": "add",
+              "amount": {
+                "lit": 15
+              }
+            },
+            {
+              "type": "playSound",
+              "assetId": "builtin:sfx/powerup"
+            }
+          ]
+        },
+        {
+          "id": "rule-upgrade-poor",
+          "enabled": true,
+          "trigger": {
+            "type": "clicked",
+            "target": {
+              "t": "ui",
+              "id": "ui-upgrade"
+            }
+          },
+          "conditions": {
+            "join": "all",
+            "items": [
+              {
+                "type": "compare",
+                "value": {
+                  "valueId": "value-coins"
+                },
+                "op": "lt",
+                "to": {
+                  "ref": {
+                    "valueId": "value-upgrade-cost"
+                  }
+                }
+              }
+            ]
+          },
+          "actions": [
+            {
+              "type": "playSound",
+              "assetId": "builtin:sfx/error"
+            },
+            {
+              "type": "showText",
+              "text": "You need {Upgrade Cost} coins",
+              "seconds": {
+                "lit": 1.5
+              }
+            }
+          ]
+        },
+        {
+          "id": "rule-buy-helper",
+          "enabled": true,
+          "trigger": {
+            "type": "clicked",
+            "target": {
+              "t": "ui",
+              "id": "ui-helper"
+            }
+          },
+          "conditions": {
+            "join": "all",
+            "items": [
+              {
+                "type": "compare",
+                "value": {
+                  "valueId": "value-coins"
+                },
+                "op": "ge",
+                "to": {
+                  "ref": {
+                    "valueId": "value-helper-cost"
+                  }
+                }
+              }
+            ]
+          },
+          "actions": [
+            {
+              "type": "changeValue",
+              "value": {
+                "valueId": "value-coins"
+              },
+              "op": "subtract",
+              "amount": {
+                "ref": {
+                  "valueId": "value-helper-cost"
+                }
+              }
+            },
+            {
+              "type": "changeValue",
+              "value": {
+                "valueId": "value-auto"
+              },
+              "op": "add",
+              "amount": {
+                "lit": 1
+              }
+            },
+            {
+              "type": "changeValue",
+              "value": {
+                "valueId": "value-helper-cost"
+              },
+              "op": "add",
+              "amount": {
+                "lit": 25
+              }
+            },
+            {
+              "type": "playSound",
+              "assetId": "builtin:sfx/powerup"
+            }
+          ]
+        },
+        {
+          "id": "rule-helper-poor",
+          "enabled": true,
+          "trigger": {
+            "type": "clicked",
+            "target": {
+              "t": "ui",
+              "id": "ui-helper"
+            }
+          },
+          "conditions": {
+            "join": "all",
+            "items": [
+              {
+                "type": "compare",
+                "value": {
+                  "valueId": "value-coins"
+                },
+                "op": "lt",
+                "to": {
+                  "ref": {
+                    "valueId": "value-helper-cost"
+                  }
+                }
+              }
+            ]
+          },
+          "actions": [
+            {
+              "type": "playSound",
+              "assetId": "builtin:sfx/error"
+            },
+            {
+              "type": "showText",
+              "text": "You need {Helper Cost} coins",
+              "seconds": {
+                "lit": 1.5
+              }
+            }
+          ]
+        },
+        {
+          "id": "rule-helpers-work",
+          "enabled": true,
+          "trigger": {
+            "type": "every",
+            "seconds": {
+              "lit": 1
+            }
+          },
+          "conditions": {
+            "join": "all",
+            "items": [
+              {
+                "type": "compare",
+                "value": {
+                  "valueId": "value-auto"
+                },
+                "op": "gt",
+                "to": {
+                  "lit": 0
+                }
+              }
+            ]
+          },
+          "actions": [
+            {
+              "type": "changeValue",
+              "value": {
+                "valueId": "value-coins"
+              },
+              "op": "add",
+              "amount": {
+                "ref": {
+                  "valueId": "value-auto"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "rule-goal",
+          "enabled": true,
+          "trigger": {
+            "type": "valueChanges",
+            "value": {
+              "valueId": "value-coins"
+            }
+          },
+          "conditions": {
+            "join": "all",
+            "items": [
+              {
+                "type": "compare",
+                "value": {
+                  "valueId": "value-coins"
+                },
+                "op": "ge",
+                "to": {
+                  "lit": 100
+                }
+              },
+              {
+                "type": "compare",
+                "value": {
+                  "valueId": "value-goal"
+                },
+                "op": "eq",
+                "to": {
+                  "lit": false
+                }
+              }
+            ]
+          },
+          "actions": [
+            {
+              "type": "changeValue",
+              "value": {
+                "valueId": "value-goal"
+              },
+              "op": "set",
+              "amount": {
+                "lit": true
+              }
+            },
+            {
+              "type": "playSound",
+              "assetId": "builtin:sfx/win"
+            },
+            {
+              "type": "showText",
+              "text": "You reached 100 coins!",
+              "seconds": {
+                "lit": 2
+              }
+            },
+            {
+              "type": "wait",
+              "seconds": {
+                "lit": 1.5
+              }
+            },
+            {
+              "type": "changeScene",
+              "sceneId": "scene-win"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "scene-win",
+      "name": "You Win",
+      "width": 960,
+      "height": 540,
+      "background": {
+        "color": "#2b5e3a"
+      },
+      "tileLayer": {
+        "tileSetId": null,
+        "cellSize": 32,
+        "cells": {}
+      },
+      "objects": [],
+      "ui": [
+        {
+          "id": "ui-win-title",
+          "name": "Title",
+          "type": "text",
+          "x": 0,
+          "y": -90,
+          "anchor": "c",
+          "text": "You win!",
+          "style": {
+            "size": 72,
+            "color": "#ffe066",
+            "font": "bold"
+          },
+          "hidden": false
+        },
+        {
+          "id": "ui-win-coins",
+          "name": "Coins",
+          "type": "text",
+          "x": 0,
+          "y": -10,
+          "anchor": "c",
+          "text": "You have {Coins} coins",
+          "style": {
+            "size": 32,
+            "color": "#ffffff",
+            "font": "round"
+          },
+          "hidden": false
+        },
+        {
+          "id": "ui-win-again",
+          "name": "Keep baking",
+          "type": "button",
+          "x": 0,
+          "y": 80,
+          "anchor": "c",
+          "text": "Keep baking",
+          "style": {
+            "size": 24,
+            "color": "#ffffff",
+            "font": "bold"
+          },
+          "lookId": "builtin:img/button_green",
+          "hidden": false
+        }
+      ],
+      "rules": [
+        {
+          "id": "rule-win-again",
+          "enabled": true,
+          "trigger": {
+            "type": "clicked",
+            "target": {
+              "t": "ui",
+              "id": "ui-win-again"
+            }
+          },
+          "conditions": {
+            "join": "all",
+            "items": []
+          },
+          "actions": [
+            {
+              "type": "changeScene",
+              "sceneId": "scene-bakery"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "kinds": [
+    {
+      "id": "kind-cookie",
+      "name": "Cookie",
+      "lookId": "builtin:img/cookie",
+      "size": {
+        "w": 128,
+        "h": 128
+      },
+      "stickers": [
+        {
+          "id": "st-cookie-click",
+          "type": "clickable",
+          "settings": {
+            "hoverGrow": true,
+            "sound": "builtin:sfx/click"
+          }
+        }
+      ],
+      "values": [],
+      "rules": [
+        {
+          "id": "rule-cookie-click",
+          "enabled": true,
+          "trigger": {
+            "type": "clicked",
+            "target": {
+              "t": "self"
+            }
+          },
+          "conditions": {
+            "join": "all",
+            "items": []
+          },
+          "actions": [
+            {
+              "type": "changeValue",
+              "value": {
+                "valueId": "value-coins"
+              },
+              "op": "add",
+              "amount": {
+                "ref": {
+                  "valueId": "value-per-click"
+                }
+              }
+            },
+            {
+              "type": "create",
+              "kindId": "kind-crumb",
+              "place": {
+                "atTarget": {
+                  "t": "self"
+                }
+              }
+            }
+          ]
+        }
+      ],
+      "layer": 1
+    },
+    {
+      "id": "kind-crumb",
+      "name": "Coin Pop",
+      "lookId": "builtin:img/coin",
+      "size": {
+        "w": 32,
+        "h": 32
+      },
+      "stickers": [
+        {
+          "id": "st-crumb-spin",
+          "type": "animate",
+          "settings": {
+            "lookId": null,
+            "fps": 8,
+            "loop": true
+          }
+        }
+      ],
+      "values": [],
+      "rules": [
+        {
+          "id": "rule-crumb-fly",
+          "enabled": true,
+          "trigger": {
+            "type": "created",
+            "target": {
+              "t": "self"
+            }
+          },
+          "conditions": {
+            "join": "all",
+            "items": []
+          },
+          "actions": [
+            {
+              "type": "setSpeed",
+              "target": {
+                "t": "self"
+              },
+              "speed": {
+                "x": {
+                  "lit": 0
+                },
+                "y": {
+                  "lit": -300
+                }
+              }
+            },
+            {
+              "type": "wait",
+              "seconds": {
+                "lit": 0.5
+              }
+            },
+            {
+              "type": "destroy",
+              "target": {
+                "t": "self"
+              }
+            }
+          ]
+        }
+      ],
+      "layer": 0
+    }
+  ],
+  "values": [
+    {
+      "id": "value-coins",
+      "name": "Coins",
+      "scope": "game",
+      "type": "number",
+      "start": 0,
+      "min": 0,
+      "remember": true
+    },
+    {
+      "id": "value-per-click",
+      "name": "Per Click",
+      "scope": "game",
+      "type": "number",
+      "start": 1,
+      "min": 1,
+      "remember": true
+    },
+    {
+      "id": "value-auto",
+      "name": "Auto",
+      "scope": "game",
+      "type": "number",
+      "start": 0,
+      "min": 0,
+      "remember": true
+    },
+    {
+      "id": "value-upgrade-cost",
+      "name": "Upgrade Cost",
+      "scope": "game",
+      "type": "number",
+      "start": 10,
+      "remember": true
+    },
+    {
+      "id": "value-helper-cost",
+      "name": "Helper Cost",
+      "scope": "game",
+      "type": "number",
+      "start": 25,
+      "remember": true
+    },
+    {
+      "id": "value-goal",
+      "name": "Goal Reached",
+      "scope": "game",
+      "type": "bool",
+      "start": false,
+      "remember": true
+    }
+  ],
+  "rules": [],
+  "assets": [],
+  "tileSets": [],
+  "tourCompleted": false
+}
