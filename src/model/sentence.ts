@@ -316,6 +316,9 @@ export function ruleSegments(rule: Rule, p: Project, names: NameLookup = {}): Se
       case 'showText': word('show'); blank('text', [...P, 'text'], `"${a.text}"`, a.text === ''); word('for'); seconds(a.seconds, [...P, 'seconds']); break;
       case 'playSound': word('play sound'); ref('sound', a.assetId, [...P, 'assetId'], assetName); break;
       case 'wait': word('wait'); seconds(a.seconds, [...P, 'seconds']); break;
+      case 'waitDone': word('wait for the steps above to finish'); break;
+      case 'waitUntil': blank('condition', [...P, 'cond'], 'wait until'); condition(a.cond, [...P, 'cond']); break;
+      case 'together': word('at the same time'); break;
       case 'changeScene': word('go to scene'); ref('scene', a.sceneId, [...P, 'sceneId'], (id) => scenes.get(id)); break;
       case 'restartScene': word('restart this scene'); break;
       case 'shakeCamera': word('shake the screen for'); seconds(a.seconds, [...P, 'seconds']); break;

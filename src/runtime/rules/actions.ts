@@ -9,12 +9,24 @@ function targets(a: { target: Parameters<typeof resolveTarget>[0] }, b: Binding,
   return resolveTarget(a.target, b, host);
 }
 
+/** What the actions run so far are still doing; "wait for the steps above to finish" waits on it. */
+export interface Busy {
+  /** Game time the timed effects (glides, bubbles, screen text, shakes, flashes) end. */
+  until: number;
+  /** Objects playing a once-only animation started by this run. */
+  anims: Instance[];
+}
+
 /**
  * Runs one action. Returns seconds to wait for `wait`, otherwise null.
  * Actions that change the world fire their own triggers through the host
- * (created/destroyed/valueChanged), which dispatch immediately.
+ * (created/destroyed/valueChanged), which dispatch immediately. Timed effects
+ * are recorded in `busy` when given.
  */
-export function runAction(a: Action, b: Binding, host: RuleHost): number | null {
+export function runAction(a: Action, b: Binding, host: RuleHost, busy?: Busy): number | null {
+  const lasts = (s: number) => {
+    if (busy) busy.until = Math.max(busy.until, host.time + s);
+  };
   switch (a.type) {
     case 'moveTo':
       for (const i of targets(a, b, host)) {
@@ -98,6 +110,7 @@ export function runAction(a: Action, b: Binding, host: RuleHost): number | null 
         if (i.anim?.assetId === a.assetId && !i.anim.done && i.anim.fps === fps) continue; // already playing: don't restart every frame
         i.anim = { assetId: a.assetId, fps, loop: a.loop, t: 0, frame: 0 };
         i.still = null;
+        if (!a.loop) busy?.anims.push(i);
       }
       return null;
     }
@@ -118,7 +131,10 @@ export function runAction(a: Action, b: Binding, host: RuleHost): number | null 
     }
     case 'showText': {
       const s = evalNum(a.seconds, b, host);
-      if (s !== null && s > 0) host.showText(host.values.format(a.text), s);
+      if (s !== null && s > 0) {
+        host.showText(host.values.format(a.text), s);
+        lasts(s);
+      }
       return null;
     }
     case 'playSound':
@@ -128,6 +144,11 @@ export function runAction(a: Action, b: Binding, host: RuleHost): number | null 
       const s = evalNum(a.seconds, b, host);
       return s !== null && s > 0 ? s : null;
     }
+    // Flow steps; the interpreter handles them.
+    case 'waitDone':
+    case 'waitUntil':
+    case 'together':
+      return null;
     case 'changeScene':
       if (typeof a.sceneId === 'string') host.requestScene(a.sceneId);
       return null;
@@ -136,7 +157,10 @@ export function runAction(a: Action, b: Binding, host: RuleHost): number | null 
       return null;
     case 'shakeCamera': {
       const s = evalNum(a.seconds, b, host);
-      if (s !== null && s > 0) host.camera.shake(s);
+      if (s !== null && s > 0) {
+        host.camera.shake(s);
+        lasts(s);
+      }
       return null;
     }
     case 'share':
@@ -144,7 +168,10 @@ export function runAction(a: Action, b: Binding, host: RuleHost): number | null 
       return null;
     case 'playAnim':
       if (typeof a.anim !== 'string') return null;
-      for (const i of targets(a, b, host)) host.world.playAnim(i, a.anim);
+      for (const i of targets(a, b, host)) {
+        host.world.playAnim(i, a.anim);
+        if (i.anim && !i.anim.loop && !i.anim.done) busy?.anims.push(i);
+      }
       return null;
     case 'stopAnim':
       for (const i of targets(a, b, host)) {
@@ -194,7 +221,10 @@ export function runAction(a: Action, b: Binding, host: RuleHost): number | null 
           i.x = p.x;
           i.y = p.y;
           i.glide = null;
-        } else i.glide = { fx: i.x, fy: i.y, tx: p.x, ty: p.y, t: 0, dur: s };
+        } else {
+          i.glide = { fx: i.x, fy: i.y, tx: p.x, ty: p.y, t: 0, dur: s };
+          lasts(s);
+        }
       }
       return null;
     }
@@ -219,6 +249,7 @@ export function runAction(a: Action, b: Binding, host: RuleHost): number | null 
       const s = evalNum(a.seconds, b, host);
       if (s === null) return null;
       for (const i of targets(a, b, host)) i.say = s > 0 && a.text ? { text: host.values.format(a.text), until: host.time + s } : null;
+      if (s > 0 && a.text) lasts(s);
       return null;
     }
     case 'clone':
@@ -287,7 +318,10 @@ export function runAction(a: Action, b: Binding, host: RuleHost): number | null 
     }
     case 'flashScreen': {
       const s = evalNum(a.seconds, b, host);
-      if (s !== null && s > 0) host.flash(a.color, s);
+      if (s !== null && s > 0) {
+        host.flash(a.color, s);
+        lasts(s);
+      }
       return null;
     }
     case 'burst': {

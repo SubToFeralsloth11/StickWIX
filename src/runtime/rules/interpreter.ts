@@ -1,7 +1,7 @@
 import type { Project, Rule, TriggerType } from '../../model/schema';
 import { allRules, ruleStates, type RuleOwner } from '../../model/references';
 import type { RuntimeEvent } from '../types';
-import { runAction } from './actions';
+import { runAction, type Busy } from './actions';
 import { checkCondition, checkConditions } from './conditions';
 import { evalNum, type Binding, type RuleHost } from './host';
 import { Scheduler } from './scheduler';
@@ -31,6 +31,8 @@ export class Interpreter {
   private stack: string[] = [];
   private reported = new Set<string>();
   readonly scheduler = new Scheduler();
+  /** Rule runs paused on "wait until …" or "wait for the steps above to finish", checked every step. */
+  private waiters: { ready: () => boolean; resume: () => void }[] = [];
 
   constructor(project: Project, sceneId: string, private readonly host: RuleHost) {
     const states = ruleStates(project);
@@ -115,28 +117,51 @@ export class Interpreter {
   private runRule(live: Live, b: Binding) {
     if (this.host.sceneChanging) return;
     if (!checkConditions(live.rule.conditions, b, this.host)) return;
-    this.runFrom(live, b, 0);
+    // "at the same time" splits the actions into lanes that all start now and wait independently.
+    const actions = live.rule.actions;
+    let start = 0;
+    for (let i = 0; i <= actions.length; i++) {
+      if (i < actions.length && actions[i]!.type !== 'together') continue;
+      if (i > start) this.runFrom(live, b, start, i, { until: this.host.time, anims: [] });
+      start = i + 1;
+    }
   }
 
-  private runFrom(live: Live, b: Binding, start: number) {
+  /** Runs actions [start, end) of one lane; `busy` tracks what the lane's earlier steps are still doing. */
+  private runFrom(live: Live, b: Binding, start: number, end: number, busy: Busy) {
     this.stack.push(live.rule.id);
     try {
       const actions = live.rule.actions;
-      for (let i = start; i < actions.length; i++) {
+      for (let i = start; i < end; i++) {
         if (this.host.sceneChanging) return;
-        const wait = runAction(actions[i]!, b, this.host);
+        const a = actions[i]!;
+        const resume = () => {
+          // Skipped if an object the rule was about is gone.
+          const gone = [b.self, ...b.that.values()].some((id) => id !== undefined && !this.host.world.get(id));
+          if (!gone) this.runFrom(live, b, i + 1, end, busy);
+        };
+        if (a.type === 'waitUntil' || a.type === 'waitDone') {
+          const ready = a.type === 'waitUntil' ? () => checkCondition(a.cond, b, this.host) : () => this.idle(busy);
+          if (ready()) continue;
+          this.waiters.push({ ready, resume });
+          return;
+        }
+        const wait = runAction(a, b, this.host, busy);
         if (wait !== null) {
-          this.scheduler.at(this.host.time + wait, () => {
-            // Skipped if an object the rule was about is gone.
-            const gone = [b.self, ...b.that.values()].some((id) => id !== undefined && !this.host.world.get(id));
-            if (!gone) this.runFrom(live, b, i + 1);
-          }, live.order);
+          this.scheduler.at(this.host.time + wait, resume, live.order);
           return;
         }
       }
     } finally {
       this.stack.pop();
     }
+  }
+
+  /** True once a lane's glides, bubbles, screen effects and once-only animations have all ended. */
+  private idle(busy: Busy) {
+    if (this.host.time + 1e-9 < busy.until) return false;
+    busy.anims = busy.anims.filter((i) => this.host.world.get(i.id) === i && i.anim !== null && !i.anim.loop && !i.anim.done);
+    return busy.anims.length === 0;
   }
 
   /** True when some rule listens for this trigger type (lets the game skip building events nobody wants). */
@@ -148,6 +173,15 @@ export class Interpreter {
   tick() {
     this.depth = 0;
     this.scheduler.runDue(this.host.time);
+    if (this.waiters.length) {
+      const due = this.waiters;
+      this.waiters = [];
+      for (const w of due) {
+        if (this.host.sceneChanging) return;
+        if (w.ready()) w.resume();
+        else this.waiters.push(w);
+      }
+    }
     for (const p of this.pollers) {
       const tr = p.live.rule.trigger;
       if (tr.type !== 'becomes' && tr.type !== 'whileTrue') continue;

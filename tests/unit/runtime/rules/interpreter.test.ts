@@ -174,6 +174,47 @@ describe('rule interpreter', () => {
     });
   });
 
+  describe('flow steps', () => {
+    const start = (actions: unknown[], extra: unknown[] = []) =>
+      game({
+        values: VALUES,
+        kinds: [{ id: 'coin' }],
+        objects: [{ id: 'c', kind: 'coin', x: 100, y: 100 }],
+        rules: [rule('r', { type: 'sceneStart' }, actions), ...extra],
+      }).game;
+
+    it('"at the same time" runs the next actions alongside a wait before it', () => {
+      const g = start([{ type: 'wait', seconds: lit(1) }, add('score'), { type: 'together' }, add('lives'), { type: 'wait', seconds: lit(0.5) }, add('lives')]);
+      expect(g.values.get('lives')).toBe(1);
+      expect(g.values.get('score')).toBe(0);
+      g.run(32);
+      expect(g.values.get('lives')).toBe(2);
+      expect(g.values.get('score')).toBe(0);
+      g.run(30);
+      expect(g.values.get('score')).toBe(1);
+    });
+
+    it('"wait for the steps above to finish" waits for a glide', () => {
+      const g = start([{ type: 'glide', target: obj('c'), to: { at: { x: lit(300), y: lit(100) } }, seconds: lit(0.5) }, { type: 'waitDone' }, add('score')]);
+      g.run(20);
+      expect(g.values.get('score')).toBe(0);
+      g.run(15);
+      expect(g.values.get('score')).toBe(1);
+      expect(g.scene.world.get('c')!.x).toBe(300);
+    });
+
+    it('"wait until" carries on once the check is true', () => {
+      const g = start(
+        [{ type: 'waitUntil', cond: { type: 'compare', value: { valueId: 'score' }, op: 'ge', to: lit(2) } }, add('lives')],
+        [rule('tick', { type: 'every', seconds: lit(0.5) }, [add('score')])],
+      );
+      g.run(40);
+      expect(g.values.get('lives')).toBe(0);
+      g.run(25);
+      expect(g.values.get('lives')).toBe(1);
+    });
+  });
+
   it(`cuts a runaway chain at depth ${MAX_DEPTH}, flags the rule and keeps the game running (FR-022)`, () => {
     expect(MAX_DEPTH).toBe(64);
     const { game: g } = game({
