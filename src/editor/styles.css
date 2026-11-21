@@ -342,6 +342,9 @@ input[type='checkbox'] { accent-color: var(--mint); width: 16px; height: 16px; }
 .pixel { display: grid; grid-template-columns: 56px 1fr 220px; gap: 12px; height: min(72vh, 640px); }
 .pixel .tools { display: flex; flex-direction: column; gap: 6px; }
 .pixel .canvas-wrap { background: var(--bg2); border-radius: 14px; display: flex; overflow: auto; position: relative; padding: 12px; min-width: 0; min-height: 0; }
+/* Side panel scrolls; its sections keep full height instead of being squashed to fit. */
+.pixel .pixel-side { overflow-y: auto; min-height: 0; padding-right: 4px; }
+.pixel .pixel-side > * { flex-shrink: 0; }
 /* margin:auto centres the board and still scrolls from its top-left edge when zoomed past the box. */
 .pixel canvas.board { margin: auto; flex: none; image-rendering: pixelated; cursor: crosshair; background: repeating-conic-gradient(#2a2639 0 25%, #221f2e 0 50%) 0 0/2px 2px; box-shadow: 0 0 0 1px var(--line2); }
 .swatches { display: grid; grid-template-columns: repeat(8, 1fr); gap: 3px; }

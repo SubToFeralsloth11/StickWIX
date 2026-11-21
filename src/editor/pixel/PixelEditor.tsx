@@ -368,7 +368,7 @@ export function PixelEditor({ project, lib, asset, onClose }: { project: Project
                 />
               </div>
 
-              <div className="stack" style={{ overflowY: 'auto' }}>
+              <div className="stack pixel-side">
                 <label className="stack" style={{ gap: 4 }}>
                   <span className="muted">Name</span>
                   <input className="field" value={name} maxLength={60} onChange={(e) => setName(e.target.value)} aria-label="Drawing name" />
