@@ -53,6 +53,21 @@ export function linePoints(x0: number, y0: number, x1: number, y1: number): [num
   }
 }
 
+/** Pixels on the outline of the box with corners (x0, y0) and (x1, y1), each pixel once. */
+export function boxPoints(x0: number, y0: number, x1: number, y1: number): [number, number][] {
+  const l = Math.min(x0, x1), r = Math.max(x0, x1), t = Math.min(y0, y1), b = Math.max(y0, y1);
+  const out: [number, number][] = [];
+  for (let x = l; x <= r; x++) {
+    out.push([x, t]);
+    if (b !== t) out.push([x, b]);
+  }
+  for (let y = t + 1; y < b; y++) {
+    out.push([l, y]);
+    if (r !== l) out.push([r, y]);
+  }
+  return out;
+}
+
 export function validSize(n: number): boolean {
   return Number.isInteger(n) && n >= MIN_SIZE && n <= MAX_SIZE;
 }
@@ -168,6 +183,31 @@ export class PixelDoc {
   line(x0: number, y0: number, x1: number, y1: number, color: string | null) {
     const c: Rgba = color ? hexToRgba(color) : [0, 0, 0, 0];
     for (const [x, y] of linePoints(x0, y0, x1, y1)) this.set(x, y, c);
+  }
+
+  /** Hollow box outline in `color`, or erasing when `color` is null (part of a stroke). */
+  box(x0: number, y0: number, x1: number, y1: number, color: string | null) {
+    const c: Rgba = color ? hexToRgba(color) : [0, 0, 0, 0];
+    for (const [x, y] of boxPoints(x0, y0, x1, y1)) this.set(x, y, c);
+  }
+
+  /**
+   * Inserts copies of frames from another drawing after the current frame and selects the last one.
+   * Frames of a different size are pasted at the top-left and cropped. Records its own undo step.
+   */
+  insertFrames(frames: readonly Pixels[], w: number, h: number) {
+    if (!frames.length) return;
+    this.beginStroke();
+    const copies = frames.map((src) => {
+      if (w === this.w && h === this.h) return src.slice();
+      const next = new Uint8ClampedArray(this.w * this.h * 4);
+      const cw = Math.min(w, this.w);
+      for (let y = 0; y < Math.min(h, this.h); y++) next.set(src.subarray(y * w * 4, (y * w + cw) * 4), y * this.w * 4);
+      return next;
+    });
+    this.frames.splice(this.current + 1, 0, ...copies);
+    this.current += copies.length;
+    this.version++;
   }
 
   /** Flood-fills the 4-connected area of exactly the clicked colour. Records its own undo step. */

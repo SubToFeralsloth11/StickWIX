@@ -8,7 +8,7 @@ import { getAsset, putAsset } from '@/storage/db';
 import { putBlobUrl, type Library } from '../assets/library';
 import { editorStore } from '../store';
 import { toast } from '../toast';
-import { PixelDoc, linePoints } from './canvas-model';
+import { PixelDoc, boxPoints, linePoints } from './canvas-model';
 import { blitRgba, decodePng, encodeStripPng } from './png';
 
 type ImageAsset = Extract<Asset, { kind: 'image' }>;
@@ -34,15 +34,16 @@ export const PALETTE = [
   '#aed581', '#cddc39', '#ffeb3b', '#fff59d', '#ffc107', '#ff9800', '#ff5722', '#ffccbc',
 ];
 
-type Tool = 'pencil' | 'eraser' | 'fill' | 'line' | 'eyedropper';
+type Tool = 'pencil' | 'eraser' | 'fill' | 'line' | 'box' | 'eyedropper';
 const TOOLS: { id: Tool; label: string; icon: string; key: string }[] = [
   { id: 'pencil', label: 'Pencil', icon: '✏️', key: 'B' },
   { id: 'eraser', label: 'Eraser', icon: '🧽', key: 'E' },
   { id: 'fill', label: 'Fill', icon: '🪣', key: 'G' },
   { id: 'line', label: 'Line', icon: '📏', key: 'L' },
+  { id: 'box', label: 'Hollow box', icon: '⬜', key: 'R' },
   { id: 'eyedropper', label: 'Pick a colour', icon: '💧', key: 'I' },
 ];
-const TOOL_KEYS: Record<string, Tool> = { b: 'pencil', e: 'eraser', g: 'fill', l: 'line', i: 'eyedropper' };
+const TOOL_KEYS: Record<string, Tool> = { b: 'pencil', e: 'eraser', g: 'fill', l: 'line', r: 'box', i: 'eyedropper' };
 
 /** Mounted with the Art tab's tools; shows the editor while one is open. */
 export function PixelEditorHost({ project, lib }: { project: Project; lib: Library }) {
@@ -63,6 +64,7 @@ export function PixelEditor({ project, lib, asset, onClose }: { project: Project
   const loadedExtras = useRef<string[]>([]);
   const [sel, setSel] = useState(0);
   const [newAnim, setNewAnim] = useState('');
+  const [copyTargetRaw, setCopyTarget] = useState(-1);
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   const [tool, setTool] = useState<Tool>('pencil');
   const [color, setColor] = useState('#000000');
@@ -110,6 +112,7 @@ export function PixelEditor({ project, lib, asset, onClose }: { project: Project
 
   const anims = animsRef.current;
   const doc = anims?.[sel]?.doc ?? null;
+  const copyTarget = anims && copyTargetRaw !== sel && copyTargetRaw >= 0 && copyTargetRaw < anims.length ? copyTargetRaw : sel === 0 ? 1 : 0;
 
   const addAnim = () => {
     const n = newAnim.trim().slice(0, 30);
@@ -126,6 +129,16 @@ export function PixelEditor({ project, lib, asset, onClose }: { project: Project
     setSel(0);
   };
 
+  /** Copies this animation's current frame (or all its frames) to the end of another animation. */
+  const copyFramesTo = (target: number, all: boolean) => {
+    const to = anims?.[target];
+    if (!doc || !to || target === sel) return;
+    to.doc.select(to.doc.frames.length - 1);
+    to.doc.insertFrames(all ? doc.frames : [doc.frames[doc.current]!], doc.w, doc.h);
+    toast(`Copied ${all ? `${doc.frames.length} frame${doc.frames.length === 1 ? '' : 's'}` : 'frame'} to "${to.name}".`);
+    rerender();
+  };
+
   // Redraw the board: onion skin, current frame, line preview.
   useEffect(() => {
     const c = board.current;
@@ -139,7 +152,7 @@ export function PixelEditor({ project, lib, asset, onClose }: { project: Project
     blitRgba(ctx, doc.frames[doc.current]!, doc.w, doc.h);
     if (linePreview) {
       const [x0, y0, x1, y1, erase] = linePreview;
-      for (const [x, y] of linePoints(x0, y0, x1, y1)) {
+      for (const [x, y] of (tool === 'box' ? boxPoints : linePoints)(x0, y0, x1, y1)) {
         if (erase) ctx.clearRect(x, y, 1, 1);
         else {
           ctx.fillStyle = color;
@@ -199,7 +212,7 @@ export function PixelEditor({ project, lib, asset, onClose }: { project: Project
       return;
     }
     stroke.current = { last: [x, y], erase, start: [x, y] };
-    if (tool === 'line') {
+    if (tool === 'line' || tool === 'box') {
       setLinePreview([x, y, x, y, erase]);
       return;
     }
@@ -214,7 +227,7 @@ export function PixelEditor({ project, lib, asset, onClose }: { project: Project
     if (!doc || !s) return;
     const [x, y] = cell(e);
     if (x === s.last[0] && y === s.last[1]) return;
-    if (tool === 'line') setLinePreview([s.start[0], s.start[1], x, y, s.erase]);
+    if (tool === 'line' || tool === 'box') setLinePreview([s.start[0], s.start[1], x, y, s.erase]);
     else {
       // Join samples with a line so fast strokes have no gaps.
       doc.line(s.last[0], s.last[1], x, y, s.erase ? null : color);
@@ -227,9 +240,9 @@ export function PixelEditor({ project, lib, asset, onClose }: { project: Project
     const s = stroke.current;
     stroke.current = null;
     if (!doc || !s) return;
-    if (tool === 'line') {
+    if (tool === 'line' || tool === 'box') {
       doc.beginStroke();
-      doc.line(s.start[0], s.start[1], s.last[0], s.last[1], s.erase ? null : color);
+      doc[tool](s.start[0], s.start[1], s.last[0], s.last[1], s.erase ? null : color);
       setLinePreview(null);
       rerender();
     } else if (!s.erase && tool === 'pencil') setRecent((r) => [color, ...r.filter((x) => x !== color)].slice(0, 8));
@@ -463,6 +476,26 @@ export function PixelEditor({ project, lib, asset, onClose }: { project: Project
                       Delete
                     </button>
                   </div>
+                  {anims!.length > 1 && (
+                    <div className="row" style={{ flexWrap: 'wrap', gap: 4, fontSize: 13 }}>
+                      <span className="muted">Copy to</span>
+                      <select className="field" value={copyTarget} onChange={(e) => setCopyTarget(Number(e.target.value))} aria-label="Animation to copy frames to">
+                        {anims!.map((a, i) =>
+                          i === sel ? null : (
+                            <option key={a.name} value={i}>
+                              {a.name}
+                            </option>
+                          ),
+                        )}
+                      </select>
+                      <button className="btn small" onClick={() => copyFramesTo(copyTarget, false)} title="Add a copy of this frame to the end of that animation">
+                        This frame
+                      </button>
+                      <button className="btn small" onClick={() => copyFramesTo(copyTarget, true)} title="Add copies of every frame here to the end of that animation">
+                        All frames
+                      </button>
+                    </div>
+                  )}
                   <label className="row" style={{ fontSize: 13 }}>
                     <input type="checkbox" checked={onion} onChange={(e) => setOnion(e.target.checked)} />
                     Onion skin (see the last frame faintly)
