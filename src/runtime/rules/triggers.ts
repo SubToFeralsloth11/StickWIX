@@ -8,6 +8,7 @@ export function triggerTypesFor(e: RuntimeEvent): TriggerType[] {
     case 'sceneStart':
       return ['sceneStart'];
     case 'key':
+    case 'keyUp':
       return ['key'];
     case 'clicked':
       return ['clicked'];
@@ -96,7 +97,12 @@ export function matchTrigger(
     case 'sceneStart':
       return e.type === 'sceneStart' ? b : null;
     case 'key':
-      if (e.type !== 'key' || typeof trigger.key !== 'string') return null;
+      if (typeof trigger.key !== 'string') return null;
+      if (trigger.mode === 'notHeld') {
+        if (e.type !== 'keyUp') return null;
+        return (trigger.key === 'AnyKey' ? e.held.size === 0 : !e.held.has(trigger.key)) ? b : null;
+      }
+      if (e.type !== 'key') return null;
       return (e.key === trigger.key || trigger.key === 'AnyKey') && e.mode === trigger.mode ? b : null;
     case 'clicked':
       if (e.type !== 'clicked' || (trigger.button ?? 'left') !== (e.button ?? 'left')) return null;

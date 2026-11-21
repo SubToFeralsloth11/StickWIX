@@ -2,6 +2,7 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { useEffect, useReducer, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import { create } from 'zustand';
 import { newId, uniqueName } from '@/model/ids';
+import { deleteAssetFromProject } from '@/model/asset-references';
 import type { Asset, Project } from '@/model/schema';
 import { getAsset, putAsset } from '@/storage/db';
 import { putBlobUrl, type Library } from '../assets/library';
@@ -9,6 +10,10 @@ import { editorStore } from '../store';
 import { toast } from '../toast';
 import { PixelDoc, linePoints } from './canvas-model';
 import { blitRgba, decodePng, encodeStripPng } from './png';
+
+type ImageAsset = Extract<Asset, { kind: 'image' }>;
+/** One animation being drawn; index 0 is the drawing itself, the rest are saved as linked assets. */
+type Anim = { name: string; doc: PixelDoc; assetId: string | null };
 
 /** Which drawing the pixel editor has open: null = closed, 'new' = a fresh drawing, else a drawn asset id. */
 export const usePixelEditor = create<{ open: string | null }>(() => ({ open: null }));
@@ -53,7 +58,11 @@ const fitZoom = (w: number, h: number) => Math.max(2, Math.floor(440 / Math.max(
 
 /** The pixel editor (FR-033): draw multi-frame sprites 8×8 to 128×128 and save them as a look. */
 export function PixelEditor({ project, lib, asset, onClose }: { project: Project; lib: Library; asset: Extract<Asset, { kind: 'image' }> | null; onClose: () => void }) {
-  const docRef = useRef<PixelDoc | null>(asset ? null : new PixelDoc(32, 32));
+  const animsRef = useRef<Anim[] | null>(asset ? null : [{ name: 'Main', doc: new PixelDoc(32, 32), assetId: null }]);
+  /** Linked animation assets this drawing had when opened, so deleted ones can be removed on save. */
+  const loadedExtras = useRef<string[]>([]);
+  const [sel, setSel] = useState(0);
+  const [newAnim, setNewAnim] = useState('');
   const [, rerender] = useReducer((n: number) => n + 1, 0);
   const [tool, setTool] = useState<Tool>('pencil');
   const [color, setColor] = useState('#000000');
@@ -74,13 +83,19 @@ export function PixelEditor({ project, lib, asset, onClose }: { project: Project
     let live = true;
     void (async () => {
       try {
-        const stored = await getAsset(project.id, asset.id);
-        const url = lib.url(asset.id);
-        const blob = stored ?? (url ? await fetch(url).then((r) => r.blob()) : null);
-        if (!blob) throw new Error('missing');
-        const { data, width, height } = await decodePng(blob);
+        const load = async (a: ImageAsset) => {
+          const stored = await getAsset(project.id, a.id);
+          const url = lib.url(a.id);
+          const blob = stored ?? (url ? await fetch(url).then((r) => r.blob()) : null);
+          if (!blob) throw new Error('missing');
+          const { data, width, height } = await decodePng(blob);
+          return PixelDoc.fromStrip(data, width, height, a.frames.count, a.frames.fps);
+        };
+        const extras = project.assets.filter((a): a is ImageAsset => a.kind === 'image' && a.animOf === asset.id);
+        const docs = await Promise.all([asset, ...extras].map(load));
         if (!live) return;
-        docRef.current = PixelDoc.fromStrip(data, width, height, asset.frames.count, asset.frames.fps);
+        loadedExtras.current = extras.map((a) => a.id);
+        animsRef.current = [{ name: 'Main', doc: docs[0]!, assetId: asset.id }, ...extras.map((a, i) => ({ name: a.animName ?? a.name, doc: docs[i + 1]!, assetId: a.id }))];
         rerender();
       } catch {
         if (!live) return;
@@ -93,7 +108,23 @@ export function PixelEditor({ project, lib, asset, onClose }: { project: Project
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const doc = docRef.current;
+  const anims = animsRef.current;
+  const doc = anims?.[sel]?.doc ?? null;
+
+  const addAnim = () => {
+    const n = newAnim.trim().slice(0, 30);
+    if (!anims || !n || anims.some((a) => a.name.toLowerCase() === n.toLowerCase())) return;
+    const main = anims[0]!.doc;
+    anims.push({ name: n, doc: new PixelDoc(main.w, main.h, main.fps), assetId: null });
+    setNewAnim('');
+    setSel(anims.length - 1);
+  };
+
+  const removeAnim = () => {
+    if (!anims || sel === 0) return;
+    anims.splice(sel, 1);
+    setSel(0);
+  };
 
   // Redraw the board: onion skin, current frame, line preview.
   useEffect(() => {
@@ -231,19 +262,42 @@ export function PixelEditor({ project, lib, asset, onClose }: { project: Project
 
   const save = async () => {
     const trimmed = name.trim();
-    if (!doc || !trimmed || saving) return;
+    if (!anims || !trimmed || saving) return;
     setSaving(true);
     try {
-      const strip = doc.exportStrip();
-      const blob = await encodeStripPng(strip);
-      const id = asset?.id ?? newId('a');
-      await putAsset(project.id, id, blob);
-      putBlobUrl(project.id, id, blob);
+      const mainId = asset?.id ?? newId('a');
+      const saved: ImageAsset[] = [];
+      for (const [i, a] of anims.entries()) {
+        const strip = a.doc.exportStrip();
+        const blob = await encodeStripPng(strip);
+        const id = i === 0 ? mainId : (a.assetId ?? newId('a'));
+        await putAsset(project.id, id, blob);
+        putBlobUrl(project.id, id, blob);
+        saved.push(
+          i === 0
+            ? { id, name: trimmed, kind: 'image', source: 'drawn', mime: 'image/png', frames: strip.frames }
+            : { id, name: `${trimmed} (${a.name})`.slice(0, 60), kind: 'image', source: 'drawn', mime: 'image/png', frames: strip.frames, animOf: mainId, animName: a.name },
+        );
+      }
+      const gone = loadedExtras.current.filter((id) => !saved.some((s) => s.id === id));
       editorStore.getState().edit(asset ? `Edit drawing "${trimmed}"` : `Draw "${trimmed}"`, (d) => {
-        const next: Asset = { id, name: trimmed, kind: 'image', source: 'drawn', mime: 'image/png', frames: strip.frames };
-        const i = d.assets.findIndex((a) => a.id === id);
-        if (i >= 0) d.assets[i] = next;
-        else d.assets.push(next);
+        for (const next of saved) {
+          const i = d.assets.findIndex((a) => a.id === next.id);
+          if (i >= 0) d.assets[i] = next;
+          else d.assets.push(next);
+        }
+        for (const id of gone) deleteAssetFromProject(d, id);
+        // Kinds wearing this drawing get each extra as a named animation.
+        for (const k of d.kinds) {
+          if (k.lookId !== mainId) continue;
+          for (const s of saved.slice(1)) {
+            const have = k.animations.find((x) => x.name.toLowerCase() === s.animName!.toLowerCase());
+            if (have) {
+              have.lookId = s.id;
+              have.fps = s.frames.fps;
+            } else if (k.animations.length < 40) k.animations.push({ id: newId('a'), name: s.animName!, lookId: s.id, fps: s.frames.fps, loop: true });
+          }
+        }
       });
       toast(asset ? `Saved "${trimmed}".` : `Saved "${trimmed}" to My art. Drag it onto the scene to use it.`);
       onClose();
@@ -290,7 +344,7 @@ export function PixelEditor({ project, lib, asset, onClose }: { project: Project
                 <canvas
                   ref={board}
                   className="board"
-                  style={{ width: doc.w * zoom, height: doc.h * zoom, touchAction: 'none' }}
+                  style={{ width: doc.w * zoom, height: doc.h * zoom, backgroundSize: `${zoom * 2}px ${zoom * 2}px`, touchAction: 'none' }}
                   onPointerDown={onDown}
                   onPointerMove={onMove}
                   onPointerUp={onUp}
@@ -351,6 +405,38 @@ export function PixelEditor({ project, lib, asset, onClose }: { project: Project
                       </option>
                     ))}
                   </select>
+                </div>
+
+                <div className="stack" style={{ gap: 4 }}>
+                  <span className="muted">Animations</span>
+                  <div className="row" style={{ flexWrap: 'wrap', gap: 4 }}>
+                    {anims!.map((a, i) => (
+                      <button key={a.name} className={`btn small${i === sel ? ' primary' : ''}`} onClick={() => setSel(i)} aria-pressed={i === sel}>
+                        {a.name}
+                      </button>
+                    ))}
+                  </div>
+                  <form
+                    className="row"
+                    style={{ gap: 4 }}
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      addAnim();
+                    }}
+                  >
+                    <input className="field grow" value={newAnim} maxLength={30} placeholder="walk, jump, mine…" onChange={(e) => setNewAnim(e.target.value)} aria-label="New animation name" />
+                    <button className="btn small" disabled={!newAnim.trim()}>
+                      + Add
+                    </button>
+                  </form>
+                  {sel > 0 && (
+                    <button className="btn small danger" onClick={removeAnim}>
+                      Delete "{anims![sel]!.name}"
+                    </button>
+                  )}
+                  <span className="dim" style={{ fontSize: 12 }}>
+                    Each extra one becomes a named animation on every Kind that wears this drawing.
+                  </span>
                 </div>
 
                 <div className="stack" style={{ gap: 4 }}>

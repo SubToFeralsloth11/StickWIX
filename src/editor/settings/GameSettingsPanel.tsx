@@ -109,6 +109,22 @@ export function GameSettingsPanel({ project, lib }: PanelProps) {
             </Row>
           </>
         )}
+        <Row label="Keep the pointer near" help="The mouse can only reach this far from the first object of this Kind (the pointer picture stops at the edge, and rules see the limited position).">
+          <select className="field" value={s.cursorLeashKind ?? ''} disabled={readOnly} onChange={(e) => set('Change pointer leash', 'cursorLeashKind', e.target.value || null)} aria-label="Keep the pointer near">
+            <option value="">(anywhere)</option>
+            {project.kinds.map((k) => (
+              <option key={k.id} value={k.id}>
+                {k.name}
+              </option>
+            ))}
+          </select>
+        </Row>
+        {s.cursorLeashKind && (
+          <Row label="Pointer reach">
+            <input type="range" min={8} max={1000} step={8} value={s.cursorLeash} disabled={readOnly} onChange={(e) => set('Change pointer reach', 'cursorLeash', Number(e.target.value))} aria-label="Pointer reach" />
+            <b className="set-val">{s.cursorLeash}px</b>
+          </Row>
+        )}
         <Row label="Lock the pointer" help="Clicking the game captures the mouse, so it can't leave the game (great for shooters). Esc lets it go. Rules can also lock and unlock it.">
           <input type="checkbox" checked={s.lockCursor} disabled={readOnly} onChange={(e) => set('Change pointer lock', 'lockCursor', e.target.checked)} aria-label="Lock the pointer" />
         </Row>

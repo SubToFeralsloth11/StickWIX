@@ -62,13 +62,18 @@ export function applyMotionLook(inst: Instance, state: State, want: string | nul
   if (prev === null) {
     state.baseLook = inst.lookId;
     state.baseAnim = inst.anim;
+    state.baseStill = inst.still;
   }
   if (want !== null) {
+    // A controller look always flips through its own frames, even when the Kind's
+    // "Flip through frames by itself" is off; the restored look keeps that setting.
     inst.lookId = want;
     inst.anim = null;
+    inst.still = null;
   } else {
     inst.lookId = state.baseLook as string | null;
     inst.anim = state.baseAnim as Instance['anim'];
+    inst.still = (state.baseStill ?? null) as number | null;
   }
   state.want = want;
 }

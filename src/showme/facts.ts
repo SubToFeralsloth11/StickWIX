@@ -39,6 +39,7 @@ export function describeEvent(e: RecentEvent['event'], p: Project, world: World)
     case 'hover': return `The mouse moved ${e.mode === 'enter' ? 'onto' : 'off'} ${kind(e.id)}`;
     case 'letGo': return `${kind(e.id)} was let go`;
     case 'frame': return 'A frame passed';
+    case 'keyUp': return 'No key was held';
     case 'message': return `The message "${e.name}" was sent`;
     case 'untouch': return `${kind(e.a)} stopped touching ${kind(e.b)}`;
     case 'animEnd': return `${kind(e.id)} finished its animation`;

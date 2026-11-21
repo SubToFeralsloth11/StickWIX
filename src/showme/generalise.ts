@@ -92,6 +92,9 @@ export function generalise(e: RecentEvent['event'], facts: WorldFacts, onlyThis:
     case 'frame':
       trigger = { type: 'everyFrame' };
       break;
+    case 'keyUp':
+      trigger = { type: 'key', key: 'AnyKey', mode: 'notHeld' };
+      break;
     case 'valueChanged':
       if (e.objectId) {
         const of = subject(e.objectId);

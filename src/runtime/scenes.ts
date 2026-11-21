@@ -70,9 +70,26 @@ export class SceneRuntime implements RuleHost {
     this.interpreter = new Interpreter(game.project, scene.id, this);
   }
 
+  /** Mouse in world space; with a pointer leash it stays within the leash of the first object of that Kind. */
   mouseWorld() {
     const m = this.game.input.state.mouse;
-    return { x: m.x / this.camera.zoom + this.camera.x, y: m.y / this.camera.zoom + this.camera.y };
+    const p = { x: m.x / this.camera.zoom + this.camera.x, y: m.y / this.camera.zoom + this.camera.y };
+    const { cursorLeashKind, cursorLeash } = this.game.project.settings;
+    const anchor = cursorLeashKind ? this.world.byKind(cursorLeashKind)[0] : undefined;
+    if (!anchor) return p;
+    const cx = anchor.x + anchor.hit.x + anchor.hit.w / 2;
+    const cy = anchor.y + anchor.hit.y + anchor.hit.h / 2;
+    const dx = p.x - cx;
+    const dy = p.y - cy;
+    const d = Math.hypot(dx, dy);
+    if (d <= cursorLeash) return p;
+    return { x: cx + (dx / d) * cursorLeash, y: cy + (dy / d) * cursorLeash };
+  }
+
+  /** The (leashed) mouse back in screen space, for drawing the pointer picture. */
+  mouseScreen() {
+    const w = this.mouseWorld();
+    return { x: (w.x - this.camera.x) * this.camera.zoom, y: (w.y - this.camera.y) * this.camera.zoom };
   }
 
   // ---------- RuleHost ----------
@@ -217,6 +234,7 @@ export class SceneRuntime implements RuleHost {
     for (const key of st.pressed) this.game.emit({ type: 'key', key, mode: 'pressed' });
     for (const key of st.held) this.game.emit({ type: 'key', key, mode: 'held' });
     for (const key of st.released) this.game.emit({ type: 'key', key, mode: 'released' });
+    if (it.listens('key')) this.game.emit({ type: 'keyUp', held: st.held });
     if (it.listens('mouse'))
       for (const button of BUTTONS) {
         if (st.buttons.pressed.has(button)) this.game.emit({ type: 'mouse', button, mode: 'pressed' });

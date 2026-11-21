@@ -89,6 +89,8 @@ export type RuntimeEvent =
   | { type: 'sceneStart' }
   | { type: 'timer'; ruleId: string; seconds: number }
   | { type: 'key'; key: string; mode: 'pressed' | 'held' | 'released' }
+  /** Once per step when a rule listens for "key is not held"; carries what is held. */
+  | { type: 'keyUp'; held: ReadonlySet<string> }
   | { type: 'clicked'; id: string; ui?: boolean; button?: 'right' }
   | { type: 'touch'; a: string; b: string }
   | { type: 'valueChanged'; valueId: string; objectId?: string; from: unknown; to: unknown }

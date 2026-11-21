@@ -38,7 +38,8 @@ function keyOf(e: RuntimeEvent): string {
     case 'animEnd':
       return `${e.type}|${e.id}`;
     case 'frame':
-      return 'frame';
+    case 'keyUp':
+      return e.type;
     case 'message':
       return `message|${e.name.toLowerCase()}`;
     case 'untouch':
@@ -62,7 +63,7 @@ export class RecentEvents {
   record(event: RuntimeEvent, t: number) {
     // Fire every step; "pressed" covers them.
     if ((event.type === 'key' || event.type === 'mouse') && event.mode === 'held') return;
-    if (event.type === 'frame') return;
+    if (event.type === 'frame' || event.type === 'keyUp') return;
     const k = keyOf(event);
     this.items.delete(k);
     this.items.set(k, { t, event });

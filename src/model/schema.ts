@@ -142,7 +142,7 @@ export const Trigger = z.discriminatedUnion('type', [
   z.object({ type: z.literal('sceneStart') }),
   z.object({ type: z.literal('every'), seconds: Num }),
   z.object({ type: z.literal('after'), seconds: Num }),
-  z.object({ type: z.literal('key'), key: orUnset(z.string().min(1)), mode: z.enum(['pressed', 'held', 'released']) }),
+  z.object({ type: z.literal('key'), key: orUnset(z.string().min(1)), mode: z.enum(['pressed', 'held', 'released', 'notHeld']) }),
   z.object({ type: z.literal('clicked'), target: Target, button: z.enum(['left', 'right']).optional() }),
   z.object({ type: z.literal('touches'), a: Target, b: Target }),
   z.object({ type: z.literal('valueChanges'), value: orUnset(ValueRef) }),
@@ -421,6 +421,9 @@ export const Asset = z.discriminatedUnion('kind', [
     source: z.enum(['builtin', 'drawn', 'imported']),
     frames: z.object({ w: z.number().int().positive(), h: z.number().int().positive(), count: z.number().int().min(1), fps: z.number().min(1).max(60).default(8) }),
     mime: z.string().default('image/png'),
+    /** Drawn animation that belongs to another drawing (made in the pixel editor's Animations list). */
+    animOf: z.string().optional(),
+    animName: z.string().max(30).optional(),
   }),
   z.object({
     id: Id,
@@ -456,6 +459,9 @@ export const Settings = z.object({
   cursorLook: z.string().nullable().default(null),
   /** Size of the custom cursor picture in game pixels. */
   cursorSize: z.number().int().min(8).max(128).default(32),
+  /** Keep the mouse within `cursorLeash` game pixels of the first object of this Kind (null = free). */
+  cursorLeashKind: z.string().nullable().default(null),
+  cursorLeash: z.number().min(8).max(4000).default(160),
   /** Lock (capture) the mouse pointer when the game is clicked; Esc frees it. */
   lockCursor: z.boolean().default(false),
   /** Stop the browser menu on right-click so games can use the right button. */

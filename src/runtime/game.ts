@@ -172,7 +172,7 @@ export class Game {
   cursorView(): GameView['cursor'] {
     const c = this.cursor;
     const css = this.cursorHint === 'none' ? 'none' : c.style === 'look' ? 'none' : this.cursorHint === 'pointer' && c.style === 'default' ? 'pointer' : c.style;
-    const m = this.input.state.mouse;
+    const m = this.scene.mouseScreen();
     return { css, look: this.cursorHint !== 'none' && c.style === 'look' ? c.look : null, size: c.size, x: m.x, y: m.y };
   }
 

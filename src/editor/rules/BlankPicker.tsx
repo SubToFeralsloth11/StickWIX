@@ -473,6 +473,7 @@ function choiceOptions(last: string, parentType: string, path: (string | number)
     case 'mode':
       if (parentType === 'hover') return [['enter', 'onto'], ['leave', 'off']];
       if (parentType === 'fullscreen') return [['on', 'on'], ['off', 'off'], ['toggle', 'switch']];
+      if (parentType === 'key') return [['pressed', 'pressed'], ['held', 'held'], ['released', 'released'], ['notHeld', 'not held (any key: no keys held)']];
       return null;
     case 'direction':
       return parentType === 'wheel' ? [['up', 'up'], ['down', 'down']] : null;

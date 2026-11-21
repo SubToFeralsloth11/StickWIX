@@ -10,7 +10,7 @@ import { AddStickerMenu } from './AddStickerMenu';
 import { FrameImg } from '../assets/AssetBrowser';
 import { HelpTip } from '../help/HelpTip';
 import { DELETE_GUARD } from '../delete-guard';
-import { AnimationsSection, AppearanceSection } from './KindLooks';
+import { AnimationsSection, AppearanceSection, HitboxSection } from './KindLooks';
 
 export interface KindSectionProps {
   project: Project;
@@ -146,6 +146,7 @@ function KindInspector({ project, lib, kind, object, scene }: KindSectionProps) 
 
       {!perObject && <AnimationsSection kind={kind} lib={lib} readOnly={readOnly} />}
       {!perObject && <AppearanceSection kind={kind} readOnly={readOnly} />}
+      {!perObject && <HitboxSection kind={kind} lib={lib} readOnly={readOnly} />}
 
       <div className="section" data-tour="stickers">
         <h4>

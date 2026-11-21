@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import type { Kind } from '@/model/schema';
 import { newId, uniqueName } from '@/model/ids';
 import type { Library } from '../assets/library';
@@ -192,6 +192,77 @@ export function AppearanceSection({ kind, readOnly }: { kind: Kind; readOnly: bo
           }}
         />
       </label>
+    </div>
+  );
+}
+
+/** Drag over the picture to draw the box that touches and collides; the rest of the picture is just looks. */
+export function HitboxSection({ kind, lib, readOnly }: { kind: Kind; lib: Library; readOnly: boolean }) {
+  const { w: kw, h: kh } = kind.size;
+  const scale = 180 / Math.max(kw, kh);
+  const W = kw * scale;
+  const H = kh * scale;
+  const area = useRef<HTMLDivElement>(null);
+  const [draft, setDraft] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
+  const url = kind.lookId ? lib.url(kind.lookId) : undefined;
+  const frames = kind.lookId ? (lib.info(kind.lookId)?.frames ?? 1) : 1;
+  const hb = kind.hitbox ?? { x: 0, y: 0, w: kw, h: kh };
+
+  /** Pointer to Kind pixels, clamped inside the picture. */
+  const at = (e: PointerEvent<HTMLDivElement>) => {
+    const r = area.current!.getBoundingClientRect();
+    const c = (v: number, max: number) => Math.max(0, Math.min(max, Math.round(v / scale)));
+    return { x: c(e.clientX - r.left, kw), y: c(e.clientY - r.top, kh) };
+  };
+  const box = draft
+    ? { x: Math.min(draft.x0, draft.x1), y: Math.min(draft.y0, draft.y1), w: Math.abs(draft.x1 - draft.x0), h: Math.abs(draft.y1 - draft.y0) }
+    : hb;
+
+  return (
+    <div className="section" data-testid="hitbox">
+      <h4>
+        <span className="row" style={{ gap: 6 }}>
+          Hitbox <HelpTip text="Drag over the picture to draw the part that touches and bumps into things." />
+        </span>
+      </h4>
+      <div
+        ref={area}
+        style={{
+          position: 'relative', width: W, height: H, margin: '0 auto', cursor: readOnly ? 'default' : 'crosshair', touchAction: 'none',
+          imageRendering: 'pixelated', borderRadius: 4, outline: '1px solid var(--line2)',
+          background: url ? `url("${url}") 0 0 / ${frames * 100}% 100% no-repeat, var(--bg2)` : 'var(--bg2)',
+        }}
+        onPointerDown={(e) => {
+          if (readOnly || e.button !== 0) return;
+          e.currentTarget.setPointerCapture(e.pointerId);
+          const p = at(e);
+          setDraft({ x0: p.x, y0: p.y, x1: p.x, y1: p.y });
+        }}
+        onPointerMove={(e) => {
+          if (!draft) return;
+          const p = at(e);
+          setDraft({ ...draft, x1: p.x, y1: p.y });
+        }}
+        onPointerUp={() => {
+          if (!draft) return;
+          setDraft(null);
+          if (box.w < 1 || box.h < 1) return;
+          editKind('Draw hitbox', kind.id, (k) => void (k.hitbox = { ...box }));
+        }}
+        aria-label="Hitbox drawing area"
+      >
+        <div style={{ position: 'absolute', left: box.x * scale, top: box.y * scale, width: box.w * scale, height: box.h * scale, border: '2px solid var(--mint)', background: '#5fe0b033', pointerEvents: 'none' }} />
+      </div>
+      <div className="row" style={{ justifyContent: 'space-between', fontSize: 12 }}>
+        <span className="dim">
+          {Math.round(hb.x)}, {Math.round(hb.y)} · {Math.round(hb.w)}×{Math.round(hb.h)}
+        </span>
+        {kind.hitbox && (
+          <button className="btn small ghost" disabled={readOnly} onClick={() => editKind('Reset hitbox', kind.id, (k) => void delete k.hitbox)}>
+            Whole picture
+          </button>
+        )}
+      </div>
     </div>
   );
 }

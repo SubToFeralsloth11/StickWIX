@@ -237,7 +237,7 @@ export function ruleSegments(rule: Rule, p: Project, names: NameLookup = {}): Se
       case 'key':
         key(t.key, [...P, 'key']);
         word('is');
-        blank('choice', [...P, 'mode'], t.mode);
+        blank('choice', [...P, 'mode'], t.mode === 'notHeld' ? (t.key === 'AnyKey' ? 'not held (no keys)' : 'not held') : t.mode);
         break;
       case 'clicked': target(t.target, [...P, 'target']); blank('choice', [...P, 'button'], t.button === 'right' ? 'is right-clicked' : 'is clicked'); break;
       case 'touches': target(t.a, [...P, 'a']); word('touches'); target(t.b, [...P, 'b']); break;
