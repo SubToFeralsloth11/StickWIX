@@ -1,12 +1,27 @@
 # StickWIX
 
-A no-code 2D game maker for beginners (10+) that runs in a desktop browser and works offline. No accounts, no servers, no block coding. Games are made from three ideas:
+A no-code 2D game maker for beginners (10+) that runs in a desktop browser and works offline. No accounts, no servers. Games are made from three ideas:
 
-1. **Stickers**: ready-made behaviours you stick onto a Kind of object (Platformer Controller, Solid, Collectible, Hurts Player, Patrol, Shooter… 15 in all), each tuned with a few sliders.
+1. **Stickers**: ready-made behaviours you stick onto a Kind of object (Platformer Controller, Solid, Collectible, Hurts Player, Patrol, Shooter, Breakable, Follow Mouse, Animator, Spawner… 26 in all), each tuned with a few sliders.
 2. **Sentence rules**: logic written as a fill-in-the-blank sentence, e.g. _When [Hero] touches [any Coin] → [that Coin] disappears and [Score] goes up by [1]_. Every blank is picked from a menu.
 3. **Show-me**: while playing, press **F2**, pick what just happened, act out what should happen in the frozen game, and StickWIX writes the rule.
 
+Rules can also be viewed as a **Block board**: each rule as When → checks → actions blocks joined by glowing wires, with the same pickers.
+
 Presets exist at every level: three starter games (Platformer, Top-down, Clicker), 24 object presets and 16 rule presets. A finished game exports as **one HTML file** that plays offline anywhere.
+
+## What you can build
+
+| Area | What is there |
+|---|---|
+| Mouse | Left/right/middle buttons, "held down for N seconds" (mining), let go, hover onto/off, mouse wheel, custom pointer (crosshair, hand, hidden, any picture), pointer lock with relative movement, right-click menu blocked |
+| Animation | Named animations per Kind (walk, jump, mine…), Animator sticker that switches them by state, "flip through frames by itself" switch, play/stop/show-frame actions, "animation finishes" trigger |
+| Logic | 23 triggers (every frame, messages, "becomes true", "while true", stops touching…), 15 checks with NOT, 48 actions; every number blank takes object properties, mouse/time/camera readings, distance/angle, tile at a place, maths and random |
+| World | Create at the mouse snapped to a grid, place/remove tiles while playing, glide, head towards, point towards, clone, tint, size, see-through, layers, speech bubbles |
+| Screen | Text, buttons, images, value bars and panels; text changes from rules; sparks, screen flash, shake, zoom, camera follow/move, slow motion, full screen, pause key |
+| Help | **How do I…?** (F1): type what you want in your own words, get step-by-step pictures. Fully offline: phrase and synonym folding, spelling correction and BM25 ranking over 48 recipes |
+
+The editor has an activity rail (Build / Logic / Game / Check), a collapsible drawer, a resizable inspector, scene tabs, a command palette (Ctrl/⌘ K), a shortcut sheet (?), and number keys 1–9 to jump between sections.
 
 ## Getting started
 
@@ -28,7 +43,7 @@ No server? `pnpm build:file` writes `dist-file/StickWIX.html`, the whole editor 
 | `pnpm dev` | Editor dev server (port 5199). Builds `public/player-template.html` first if missing. |
 | `pnpm build` | Player template, type check, then the editor into `dist/` (static files; host anywhere). |
 | `pnpm build:file` | Same checks, then the editor as one self-contained `dist-file/StickWIX.html` that runs from `file://`. |
-| `pnpm build:player` | Single-file game player → `public/player-template.html`, fails if over 600 KB. |
+| `pnpm build:player` | Single-file game player → `public/player-template.html`, fails if over 700 KB. |
 | `pnpm test` | Unit and integration tests (Vitest, jsdom, fake IndexedDB, headless runtime). |
 | `pnpm test:e2e` | End-to-end tests (Playwright, Chromium, one worker). `perf.spec.ts` runs headed to measure the real GPU. |
 | `pnpm lint` / `pnpm typecheck` | ESLint (with layer rules) and strict TypeScript. |
@@ -66,7 +81,7 @@ flowchart LR
 | `src/export/`, `src/player/` | Game export (assets inlined as data URLs) and the player that runs exported games. |
 | `src/editor/` | The React editor: home, canvas, inspector, rules, values, screen layer, Show-me overlay, pixel editor, tour, help, warnings. |
 
-ESLint forbids `runtime/`, `model/`, `showme/`, `lint/` and `player/` from importing editor code or React, so exported games stay small (the player template is about 592 KB).
+ESLint forbids `runtime/`, `model/`, `showme/`, `lint/` and `player/` from importing editor code or React, so exported games stay small (the player template is about 631 KB).
 
 Key behaviours: Play runs on a deep copy of the document, so Stop always restores the editor exactly; the simulation steps at a fixed 1/60 s regardless of display rate; rules run game → scene → Kind, each in list order; a rule chain that re-triggers itself more than 64 times in one moment is cut and flagged; at most 1,000 live objects per scene; objects more than one screen outside the scene are removed and fire "leaves the scene".
 
