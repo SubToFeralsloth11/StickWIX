@@ -1,5 +1,4 @@
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { useEffect, useRef, type ReactNode } from 'react';
+import { useEffect, useRef } from 'react';
 import type { RuleOwner, RuleState } from '@/model/references';
 import type { Project, Rule } from '@/model/schema';
 import { ACTIONS, CONDITIONS, TRIGGERS } from '@/model/rule-templates';
@@ -9,6 +8,7 @@ import { editorStore } from '../store';
 import * as R from '../store/rule-ops';
 import { BlankPicker } from './BlankPicker';
 import { HelpTip } from '../help/HelpTip';
+import { TemplateMenu } from './TemplateMenu';
 
 export interface SentenceCardProps {
   project: Project;
@@ -23,24 +23,37 @@ export interface SentenceCardProps {
   last: boolean;
 }
 
-function Menu({ trigger, items, onPick }: { trigger: ReactNode; items: [string, { label: string; help: string }][]; onPick: (key: string) => void }) {
+/** One piece of a rule sentence: plain words, or a blank that opens its picker. */
+export function SegmentChip({ seg, project, lib, rule, owner, readOnly }: { seg: Segment; project: Project; lib: Library; rule: Rule; owner: RuleOwner; readOnly: boolean }) {
+  if (!('blank' in seg))
+    return <span className={/^[,.%)]|^'s/.test(seg.text) ? 'w punct' : 'w'}>{seg.text}</span>;
   return (
-    <DropdownMenu.Root>
-      <DropdownMenu.Trigger asChild>{trigger}</DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content className="pop" sideOffset={6} align="start">
-          {items.map(([k, t]) => (
-            <DropdownMenu.Item key={k} className="opt" onSelect={() => onPick(k)}>
-              <span>
-                {t.label}
-                <small>{t.help}</small>
-              </span>
-            </DropdownMenu.Item>
-          ))}
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+    <BlankPicker
+      project={project}
+      lib={lib}
+      rule={rule}
+      owner={owner}
+      path={seg.path}
+      kind={seg.blank}
+      disabled={readOnly}
+      className={`blank ${seg.status !== 'ok' ? seg.status : ''}`}
+      onPick={(v, at) => editorStore.getState().edit('Fill in rule', (d) => R.setRuleAt(d, rule.id, at ?? seg.path, v))}
+    >
+      {seg.text}
+    </BlankPicker>
   );
+}
+
+/** Splits sentence segments into the trigger, each check and each action. */
+export function groupSegments(segs: Segment[]): { part: Segment['part']; segs: Segment[] }[] {
+  const groups: { part: Segment['part']; segs: Segment[] }[] = [];
+  for (const s of segs) {
+    const g = groups[groups.length - 1];
+    const same = g && g.part && s.part && g.part.kind === s.part.kind && ('index' in g.part ? 'index' in s.part && g.part.index === s.part.index : true);
+    if (same) g.segs.push(s);
+    else groups.push({ part: s.part, segs: [s] });
+  }
+  return groups;
 }
 
 /** One rule shown as an English sentence whose blanks are pickers (FR-015). */
@@ -53,35 +66,9 @@ export function SentenceCard({ project, lib, rule, owner, state, runaway, flash,
   const segs = ruleSegments(rule, project, { asset: lib.name });
 
   // Group consecutive segments of the same condition/action so each part gets its own remove button.
-  const groups: { part: Segment['part']; segs: Segment[] }[] = [];
-  for (const s of segs) {
-    const g = groups[groups.length - 1];
-    const same = g && g.part && s.part && g.part.kind === s.part.kind && ('index' in g.part ? 'index' in s.part && g.part.index === s.part.index : true);
-    if (same) g.segs.push(s);
-    else groups.push({ part: s.part, segs: [s] });
-  }
+  const groups = groupSegments(segs);
 
-  const renderSeg = (s: Segment, i: number) =>
-    'blank' in s ? (
-      <BlankPicker
-        key={i}
-        project={project}
-        lib={lib}
-        rule={rule}
-        owner={owner}
-        path={s.path}
-        kind={s.blank}
-        disabled={readOnly}
-        className={`blank ${s.status !== 'ok' ? s.status : ''}`}
-        onPick={(v, at) => edit('Fill in rule', (d) => R.setRuleAt(d, rule.id, at ?? s.path, v))}
-      >
-        {s.text}
-      </BlankPicker>
-    ) : (
-      <span key={i} className={/^[,.%]|^'s/.test(s.text) ? 'w punct' : 'w'}>
-        {s.text}
-      </span>
-    );
+  const renderSeg = (s: Segment, i: number) => <SegmentChip key={i} seg={s} project={project} lib={lib} rule={rule} owner={owner} readOnly={readOnly} />;
 
   return (
     <div ref={ref} className={`rule ${rule.enabled ? '' : 'off'} ${state !== 'ok' ? state : ''} ${flash ? 'flash' : ''}`} data-testid="rule" data-rule-id={rule.id}>
@@ -92,13 +79,14 @@ export function SentenceCard({ project, lib, rule, owner, state, runaway, flash,
             if (g.part?.kind === 'trigger' && !readOnly)
               return (
                 <span key={gi} title={TRIGGERS[rule.trigger.type].help}>
-                  <Menu
+                  <TemplateMenu
+                    title="Change what starts this rule"
                     trigger={
                       <button className="blank" title="Change what starts this rule" style={{ borderBottomColor: 'var(--clay)' }}>
                         {String(g.segs[0]!.text)}
                       </button>
                     }
-                    items={Object.entries(TRIGGERS)}
+                    templates={TRIGGERS}
                     onPick={(k) => edit('Change trigger', (d) => R.setRuleAt(d, rule.id, ['trigger'], TRIGGERS[k as keyof typeof TRIGGERS].make()))}
                   />
                   {g.segs.slice(1).map((s, i) => renderSeg(s, gi * 1000 + i + 1))}
@@ -115,6 +103,17 @@ export function SentenceCard({ project, lib, rule, owner, state, runaway, flash,
               title={part.kind === 'condition' ? CONDITIONS[rule.conditions.items[part.index]!.type].help : ACTIONS[rule.actions[part.index]!.type].help}
             >
               {body}
+              {!readOnly && part.kind === 'condition' && (
+                <button
+                  className="btn small ghost"
+                  style={{ padding: '0 4px', color: rule.conditions.items[part.index]!.not ? 'var(--rose)' : 'var(--dim)' }}
+                  onClick={() => edit('Flip check', (d) => R.setRuleAt(d, rule.id, ['conditions', 'items', part.index, 'not'], rule.conditions.items[part.index]!.not ? undefined : true))}
+                  aria-label="Flip this check (NOT)"
+                  title="Flip: run when this is NOT true"
+                >
+                  ¬
+                </button>
+              )}
               {!readOnly && (part.kind === 'condition' || rule.actions.length > 1) && (
                 <button className="btn small ghost" style={{ padding: '0 4px', color: 'var(--dim)' }} onClick={() => edit(`Remove ${part.kind}`, (d) => R.removePart(d, rule.id, part))} aria-label={`Remove this ${part.kind}`} title={`Remove this ${part.kind === 'condition' ? 'check' : 'action'}`}>
                   ✕
@@ -138,9 +137,10 @@ export function SentenceCard({ project, lib, rule, owner, state, runaway, flash,
         <span className="grow" />
         {!readOnly && (
           <>
-            <Menu
+            <TemplateMenu
+              title="Only if…"
               trigger={<button className="add-part">＋ only if</button>}
-              items={Object.entries(CONDITIONS)}
+              templates={CONDITIONS}
               onPick={(k) => edit('Add check', (d) => R.addCondition(d, rule.id, CONDITIONS[k as keyof typeof CONDITIONS].make()))}
             />
             {rule.conditions.items.length > 1 && (
@@ -148,9 +148,10 @@ export function SentenceCard({ project, lib, rule, owner, state, runaway, flash,
                 {rule.conditions.join === 'all' ? 'all must be true' : 'any can be true'}
               </button>
             )}
-            <Menu
+            <TemplateMenu
+              title="And then…"
               trigger={<button className="add-part" data-testid="add-action">＋ and then</button>}
-              items={Object.entries(ACTIONS)}
+              templates={ACTIONS}
               onPick={(k) => edit('Add action', (d) => R.addAction(d, rule.id, ACTIONS[k as keyof typeof ACTIONS].make()))}
             />
             <span className="mini">

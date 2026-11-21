@@ -16,10 +16,12 @@ export interface StickerCardProps {
   onChange: (key: string, value: unknown) => void;
   onReset?: (key: string) => void;
   onRemove: () => void;
+  /** Names of the Kind's animations, for animation settings (Animator). */
+  animNames?: string[];
 }
 
 /** One sticker on a Kind: its plain-language settings as sliders, toggles and pickers (FR-013). */
-export function StickerCard({ project, lib, sticker, overrides, readOnly, onChange, onReset, onRemove }: StickerCardProps) {
+export function StickerCard({ project, lib, sticker, overrides, readOnly, onChange, onReset, onRemove, animNames = [] }: StickerCardProps) {
   const mod = STICKERS[sticker.type];
   return (
     <div className="sticker" data-testid={`sticker-${sticker.type}`}>
@@ -39,7 +41,7 @@ export function StickerCard({ project, lib, sticker, overrides, readOnly, onChan
           const value = overridden ? overrides[f.key] : sticker.settings[f.key];
           return (
             <div key={f.key} className={`setting ${overridden ? 'overridden' : ''}`}>
-              <Field field={f} value={value} project={project} lib={lib} disabled={readOnly} onChange={(v) => onChange(f.key, v)} />
+              <Field field={f} value={value} project={project} lib={lib} animNames={animNames} disabled={readOnly} onChange={(v) => onChange(f.key, v)} />
               {overridden && onReset && (
                 <button className="reset" onClick={() => onReset(f.key)}>
                   Use the same as the others
@@ -69,7 +71,7 @@ function Label({ field, children }: { field: SettingField; children?: React.Reac
   );
 }
 
-function Field({ field, value, project, lib, disabled, onChange }: { field: SettingField; value: unknown; project: Project; lib: Library; disabled: boolean; onChange: (v: unknown) => void }) {
+function Field({ field, value, project, lib, animNames, disabled, onChange }: { field: SettingField; value: unknown; project: Project; lib: Library; animNames: string[]; disabled: boolean; onChange: (v: unknown) => void }) {
   const [draft, setDraft] = useState<number | null>(null);
   switch (field.kind) {
     case 'slider': {
@@ -175,6 +177,20 @@ function Field({ field, value, project, lib, disabled, onChange }: { field: Sett
         <>
           <Label field={field} />
           <KeyPicker value={String(value ?? '')} disabled={disabled} onChange={onChange} />
+        </>
+      );
+    case 'anim':
+      return (
+        <>
+          <Label field={field} />
+          <select className="field" style={{ width: '100%' }} value={String(value ?? '')} disabled={disabled} onChange={(e) => onChange(e.target.value)} aria-label={field.label}>
+            <option value="">(none)</option>
+            {animNames.map((n) => (
+              <option key={n} value={n}>
+                {n}
+              </option>
+            ))}
+          </select>
         </>
       );
   }

@@ -1,7 +1,7 @@
 import { current, type Draft } from 'immer';
 import { newId, uniqueName } from '@/model/ids';
 import { newScene } from '@/model/defaults';
-import type { Kind, ObjectInstance, Project, Scene, Sticker, UIElement } from '@/model/schema';
+import { Kind, UIElement, type ObjectInstance, type Project, type Scene, type Sticker } from '@/model/schema';
 import { CONTROLLER_TYPES, fillStickerSettings, type StickerType } from '@/model/sticker-settings';
 
 
@@ -79,10 +79,7 @@ export function resizeScene(p: P, sceneId: string, width: number, height: number
 // ---------- Kinds & objects (FR-008, FR-009) ----------
 
 export function addKind(p: P, name: string, lookId: string | null, w: number, h: number): string {
-  const k: Kind = {
-    id: newId('k'), name: uniqueName(name, p.kinds.map((x) => x.name)), lookId, size: { w, h },
-    stickers: [], values: [], rules: [], layer: 0,
-  };
+  const k = Kind.parse({ id: newId('k'), name: uniqueName(name, p.kinds.map((x) => x.name)), lookId, size: { w, h } });
   p.kinds.push(k);
   return k.id;
 }
@@ -271,13 +268,14 @@ export function assignTileSet(p: P, sceneId: string, tileSetId: string) {
 
 export function addUIElement(p: P, sceneId: string, type: UIElement['type'], init: Partial<UIElement> = {}): string {
   const s = sceneOf(p, sceneId);
-  const base = type === 'text' ? 'Text' : type === 'button' ? 'Button' : 'Image';
-  const el: UIElement = {
+  const base = { text: 'Text', button: 'Button', image: 'Image', bar: 'Bar', panel: 'Panel' }[type];
+  const el = UIElement.parse({
     // New items stack down the left edge so they never land on top of each other.
     id: newId('u'), name: uniqueName(init.name ?? base, s.ui.map((u) => u.name)), type, x: 16, y: 16 + (s.ui.filter((u) => u.anchor === 'tl').length % 10) * 48, anchor: 'tl',
-    text: type === 'image' ? '' : type === 'button' ? 'Click me' : 'Score: {Score}',
-    style: { size: 24, color: '#ffffff', font: 'round' }, hidden: false, ...init,
-  };
+    text: type === 'button' ? 'Click me' : type === 'text' ? 'Score: {Score}' : '',
+    ...(type === 'panel' ? { fill: '#221f2e', w: 240, h: 120, opacity: 0.85 } : {}),
+    ...init,
+  });
   s.ui.push(el);
   return el.id;
 }

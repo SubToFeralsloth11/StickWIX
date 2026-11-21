@@ -125,7 +125,7 @@ export function ShowMeOverlay({ game, project, lib, scale, stop }: PlayOverlayPr
 
   if (!session)
     return (
-      <div className="play-hud" style={{ top: -46 }}>
+      <div className="play-hud">
         <button className="btn" onClick={open} data-testid="show-me" data-tour="show-me" title={`Freeze the game and show StickWIX what should happen (${keyName(key)})`}>
           ✋ Show me <span className="kbd">{keyName(key)}</span>
         </button>
@@ -421,7 +421,13 @@ export function ShowMeOverlay({ game, project, lib, scale, stop }: PlayOverlayPr
 function subjects(e: ShowMeSession['events'][number]['event']): string[] {
   switch (e.type) {
     case 'touch':
+    case 'untouch':
       return [e.a, e.b];
+    case 'holding':
+    case 'hover':
+    case 'letGo':
+    case 'animEnd':
+      return [e.id];
     case 'clicked':
       return e.ui ? [] : [e.id];
     case 'created':

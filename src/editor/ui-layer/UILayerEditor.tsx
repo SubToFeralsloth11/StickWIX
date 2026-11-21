@@ -30,7 +30,12 @@ export function UILayerEditor({ project, lib }: PanelProps) {
     let id = '';
     editorStore.getState().edit(`Add ${type}`, (d) => {
       const firstValue = d.values[0]?.name;
-      id = ops.addUIElement(d, sceneId, type, type === 'text' ? { text: firstValue ? `${firstValue}: {${firstValue}}` : 'Hello!' } : type === 'image' ? { lookId: 'builtin:img/heart' } : {});
+      id = ops.addUIElement(
+        d,
+        sceneId,
+        type,
+        type === 'text' ? { text: firstValue ? `${firstValue}: {${firstValue}}` : 'Hello!' } : type === 'image' ? { lookId: 'builtin:img/heart' } : type === 'bar' ? { valueName: firstValue ?? '', max: 10 } : {},
+      );
     });
     setUI({ uiSelection: id });
   };
@@ -49,6 +54,12 @@ export function UILayerEditor({ project, lib }: PanelProps) {
           </button>
           <button className="btn small primary" onClick={() => add('image')}>
             ＋ Image
+          </button>
+          <button className="btn small primary" onClick={() => add('bar')} title="A bar that fills up with a value, like health or breaking progress">
+            ＋ Bar
+          </button>
+          <button className="btn small primary" onClick={() => add('panel')} title="A coloured box behind other screen items, like a hotbar">
+            ＋ Panel
           </button>
         </div>
       )}
@@ -71,7 +82,44 @@ export function UILayerEditor({ project, lib }: PanelProps) {
               }} />
               <HelpTip text="Rules use this name, e.g. 'When Upgrade is clicked'." />
             </label>
-            {el.type !== 'image' && (
+            {(el.type === 'bar' || el.type === 'panel') && (
+              <div className="stack">
+                {el.type === 'bar' && (
+                  <div className="row">
+                    <span className="muted">Shows</span>
+                    <select className="field grow" value={el.valueName} disabled={readOnly} aria-label="Value shown" onChange={(e) => patchUI(sceneId, el.id, 'Change bar value', (x) => void (x.valueName = e.target.value))}>
+                      <option value="">(choose a value)</option>
+                      {project.values.filter((v) => v.type === 'number').map((v) => (
+                        <option key={v.id} value={v.name}>
+                          {v.name}
+                        </option>
+                      ))}
+                    </select>
+                    <span className="muted">full at</span>
+                    <input key={'m' + el.max} className="field" type="number" min={0.01} style={{ width: 64 }} defaultValue={el.max} disabled={readOnly} aria-label="Full at" onBlur={(e) => {
+                      const n = Number(e.currentTarget.value);
+                      if (n > 0 && n !== el.max) patchUI(sceneId, el.id, 'Change bar maximum', (x) => void (x.max = n));
+                    }} />
+                  </div>
+                )}
+                <div className="row">
+                  <span className="muted">Box</span>
+                  {(['w', 'h'] as const).map((k) => (
+                    <input key={k + el[k]} className="field" type="number" min={4} style={{ width: 64 }} defaultValue={el[k]} aria-label={k === 'w' ? 'Box width' : 'Box height'} disabled={readOnly} onBlur={(e) => {
+                      const n = Math.round(Number(e.currentTarget.value));
+                      if (n >= 4 && n !== el[k]) patchUI(sceneId, el.id, 'Resize', (x) => void (x[k] = n));
+                    }} />
+                  ))}
+                  <input type="color" value={el.fill} disabled={readOnly} aria-label="Fill colour" onChange={(e) => patchUI(sceneId, el.id, 'Fill colour', (x) => void (x.fill = e.target.value))} />
+                  {el.type === 'bar' && <input type="color" value={el.track} disabled={readOnly} aria-label="Empty colour" onChange={(e) => patchUI(sceneId, el.id, 'Empty colour', (x) => void (x.track = e.target.value))} />}
+                </div>
+              </div>
+            )}
+            <label className="row">
+              <span className="muted">See-through</span>
+              <input type="range" min={0} max={0.9} step={0.05} value={1 - el.opacity} disabled={readOnly} aria-label="Screen item see-through" onChange={(e) => patchUI(sceneId, el.id, 'See-through', (x) => void (x.opacity = Math.round((1 - Number(e.target.value)) * 100) / 100))} />
+            </label>
+            {(el.type === 'text' || el.type === 'button') && (
               <label className="stack" style={{ gap: 3 }}>
                 <span className="muted">
                   Words {project.values.length > 0 && <>(show a value with {'{'}{project.values[0]!.name}{'}'})</>}
@@ -103,7 +151,7 @@ export function UILayerEditor({ project, lib }: PanelProps) {
                 }} />
               ))}
             </div>
-            {el.type !== 'image' && (
+            {(el.type === 'text' || el.type === 'button') && (
               <div className="row">
                 <span className="muted">Size</span>
                 <input key={'s' + el.style.size} className="field" type="number" min={6} max={200} style={{ width: 64 }} defaultValue={el.style.size} disabled={readOnly} onBlur={(e) => {
@@ -118,7 +166,7 @@ export function UILayerEditor({ project, lib }: PanelProps) {
                 </select>
               </div>
             )}
-            {el.type !== 'text' && (
+            {el.type !== 'text' && el.type !== 'bar' && (
               <label className="row">
                 <span className="muted">Picture</span>
                 <select className="field grow" value={el.lookId ?? ''} disabled={readOnly} onChange={(e) => patchUI(sceneId, el.id, 'Change picture', (x) => void (x.lookId = e.target.value || null))}>
@@ -174,6 +222,7 @@ export function UILayerOverlay({ project, scene, lib, toView, zoom }: OverlayPro
         const box = layoutUI(el, values.format(el.text), screen, (id) => lib.info(id));
         const d = delta?.id === el.id ? delta : null;
         const look = el.lookId ? lib.url(el.lookId) : undefined;
+        const boxed = el.type === 'bar' || el.type === 'panel';
         return (
           <div
             key={el.id}
@@ -181,8 +230,9 @@ export function UILayerOverlay({ project, scene, lib, toView, zoom }: OverlayPro
             title={`${el.name} (screen ${el.type})`}
             style={{
               left: origin.x + (box.x + (d?.dx ?? 0)) * zoom, top: origin.y + (box.y + (d?.dy ?? 0)) * zoom, width: box.w * zoom, height: box.h * zoom,
-              opacity: el.hidden ? 0.45 : 1, display: 'grid', placeItems: 'center', overflow: 'hidden',
-              background: el.type === 'button' && !look ? '#ff7a59' : undefined, borderRadius: el.type === 'button' ? 10 : 2,
+              opacity: (el.hidden ? 0.45 : 1) * el.opacity, display: 'grid', placeItems: 'center', overflow: 'hidden',
+              background: el.type === 'button' && !look ? (el.fill === '#5fe0b0' ? '#ff7a59' : el.fill) : el.type === 'panel' && !look ? el.fill : el.type === 'bar' ? `linear-gradient(90deg, ${el.fill} 60%, ${el.track} 60%)` : undefined,
+              borderRadius: el.type === 'button' || boxed ? 10 : 2,
               color: el.style.color, fontSize: el.style.size * zoom, fontWeight: 800, whiteSpace: 'nowrap',
               textShadow: '0 2px 0 #15131c, 0 -1px 0 #15131c, 2px 0 0 #15131c, -2px 0 0 #15131c',
               backgroundImage: look ? `url(${look})` : undefined, backgroundSize: '100% 100%', imageRendering: 'pixelated',
@@ -213,7 +263,7 @@ export function UILayerOverlay({ project, scene, lib, toView, zoom }: OverlayPro
               });
             }}
           >
-            {el.type !== 'image' ? box.text : ''}
+            {el.type === 'text' || el.type === 'button' ? box.text : ''}
           </div>
         );
       })}

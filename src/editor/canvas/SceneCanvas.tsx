@@ -115,12 +115,17 @@ export function SceneCanvas({ project, lib }: { project: Project; lib: Library }
       scene,
       tileSet: project.tileSets.find((t) => t.id === scene.tileLayer.tileSetId),
       screen: { w: size.w / zoom, h: size.h / zoom },
-      camera: { x: shownCam.x, y: shownCam.y, offset: { x: 0, y: 0 } },
+      camera: { x: shownCam.x, y: shownCam.y, zoom: 1, offset: { x: 0, y: 0 } },
       time: 0,
       instances,
       ui: [],
       texts: [],
       frozen: false,
+      paused: false,
+      tiles: null,
+      particles: [],
+      flash: null,
+      cursor: { css: '', look: null, size: 0, x: 0, y: 0 },
     };
     renderer.render(view);
   }, [renderer, world, project, scene, shownCam, zoom, size, drag, cursor, grid, tick, playing]);

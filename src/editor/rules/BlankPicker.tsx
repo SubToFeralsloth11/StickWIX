@@ -1,8 +1,10 @@
 import * as Popover from '@radix-ui/react-popover';
 import { useState, type ReactNode } from 'react';
 import { boundKinds, type RuleOwner } from '@/model/references';
-import type { Project, Rule, Target, Value } from '@/model/schema';
-import { OP_PHRASE, STICKER_EVENT_PHRASE, VALUE_OP_PHRASE, type BlankKind } from '@/model/sentence';
+import { CONDITIONS, grouped } from '@/model/rule-templates';
+import { GAME_PROPS, MATH_FNS, MATH_OPS, PROPS, SETTABLE_PROPS, CURSORS, type Condition, type Num, type Project, type Rule, type Target, type Value } from '@/model/schema';
+import { CURSOR_PHRASE, FN_PHRASE, GAME_PROP_PHRASE, MATH_PHRASE, OP_PHRASE, PROP_PHRASE, STICKER_EVENT_PHRASE, VALUE_OP_PHRASE, type BlankKind } from '@/model/sentence';
+import { allRules } from '@/model/references';
 import { newId, uniqueName } from '@/model/ids';
 import type { Library } from '../assets/library';
 import { FrameImg } from '../assets/AssetBrowser';
@@ -60,7 +62,7 @@ export function BlankPicker(props: BlankPickerProps) {
 
 function PickerBody({ project, lib, rule, owner, path, kind, pick }: BlankPickerProps & { pick: (v: unknown, at?: (string | number)[]) => void }) {
   const inTrigger = path[0] === 'trigger';
-  const quant = path[0] === 'actions' && !path.includes('atTarget') ? 'every' : 'any';
+  const quant = path[0] === 'actions' && !path.some((k) => k === 'atTarget' || k === 'prop' || k === 'between' || k === 'near' || k === 'to') ? 'every' : 'any';
   const last = path[path.length - 1];
   const current = getRuleAt(rule, path);
   const kinds = project.kinds;
@@ -76,7 +78,7 @@ function PickerBody({ project, lib, rule, owner, path, kind, pick }: BlankPicker
       const placeSwitch = path.includes('atTarget');
       const clickTrigger = inTrigger && rule.trigger.type === 'clicked';
       const uiAllowed =
-        (clickTrigger || (!inTrigger && ['show', 'hide', 'destroy', 'changeLook'].includes(String(getRuleAt(rule, [...path.slice(0, -1), 'type']))))) &&
+        (clickTrigger || (!inTrigger && ['show', 'hide', 'destroy', 'changeLook', 'setText'].includes(String(getRuleAt(rule, [...path.slice(0, -1), 'type']))))) &&
         scenes.some((s) => s.ui.some((u) => !clickTrigger || u.type === 'button'));
       return (
         <>
@@ -134,7 +136,7 @@ function PickerBody({ project, lib, rule, owner, path, kind, pick }: BlankPicker
           {placeSwitch && (
             <>
               <h6>Or</h6>
-              <Opt onClick={() => pick({ at: { x: { lit: 0 }, y: { lit: 0 } } }, path.slice(0, path.indexOf('atTarget')))}>a spot (x, y)…</Opt>
+              <PlaceOptions pick={pick} at={path.slice(0, path.indexOf('atTarget'))} />
             </>
           )}
           {kinds.length === 0 && <div className="muted" style={{ padding: 8 }}>Add some objects to the scene first.</div>}
@@ -181,15 +183,83 @@ function PickerBody({ project, lib, rule, owner, path, kind, pick }: BlankPicker
             </form>
           )}
           <ValueList project={project} rule={rule} owner={owner} onPick={(v) => pick({ ref: v })} filter={(v) => kind === 'operand' || v.type === 'number'} title="Or the amount in a value" />
+          {type === 'number' && <Readings current={current as Num | undefined} defaultTarget={defaultTarget(rule, owner)} pick={pick} />}
           {atIdx >= 0 && (
             <>
-              <h6>Or</h6>
-              <Opt onClick={() => pick({ atTarget: { t: 'unset' } }, path.slice(0, atIdx))}>where an object is…</Opt>
+              <h6>Or a different place</h6>
+              <PlaceOptions pick={pick} at={path.slice(0, atIdx)} />
             </>
           )}
         </>
       );
     }
+    case 'place':
+      return (
+        <>
+          <h6>Where</h6>
+          <PlaceOptions pick={pick} at={path} />
+        </>
+      );
+    case 'message': {
+      const names = messageNames(project);
+      return (
+        <>
+          <h6>Messages</h6>
+          {names.map((n) => (
+            <Opt key={n} onClick={() => pick(n)}>
+              {n}
+            </Opt>
+          ))}
+          <form
+            className="row"
+            style={{ padding: 6 }}
+            onSubmit={(e) => {
+              e.preventDefault();
+              const v = String(new FormData(e.currentTarget).get('m') ?? '').trim().slice(0, 40);
+              if (v) pick(v);
+            }}
+          >
+            <input className="field grow" name="m" placeholder="New message, e.g. game over" autoFocus maxLength={40} aria-label="Message name" />
+            <button className="btn small primary">OK</button>
+          </form>
+        </>
+      );
+    }
+    case 'anim': {
+      const tgt = getRuleAt(rule, [...path.slice(0, -1), 'target']) as Target | undefined;
+      const kindId = tgt && (tgt.t === 'any' || tgt.t === 'that') ? tgt.kindId : tgt?.t === 'self' && owner.type === 'kind' ? owner.id : tgt?.t === 'object' ? objectKinds.get(tgt.id) : undefined;
+      const pool = kindId ? kinds.filter((k) => k.id === kindId) : kinds;
+      const names = [...new Set(pool.flatMap((k) => k.animations.map((a) => a.name)))];
+      return (
+        <>
+          <h6>Animations{kindId ? ` of ${kinds.find((k) => k.id === kindId)?.name}` : ''}</h6>
+          {names.map((n) => (
+            <Opt key={n} onClick={() => pick(n)}>
+              {n}
+            </Opt>
+          ))}
+          {names.length === 0 && <div className="dim" style={{ padding: 8, maxWidth: 260 }}>No animations yet. Select the object and add some in the Animations section of the inspector.</div>}
+        </>
+      );
+    }
+    case 'color':
+      return <ColorBody current={typeof current === 'string' ? current : '#ffffff'} tintable={String(getRuleAt(rule, [...path.slice(0, -1), 'type'])) === 'tint'} pick={pick} />;
+    case 'condition':
+      return (
+        <>
+          <h6>Change the check</h6>
+          {grouped(CONDITIONS).map(([g, items]) => (
+            <div key={g}>
+              <h6>{g}</h6>
+              {items.map(([k, t]) => (
+                <Opt key={k} onClick={() => pick(t.make() as Condition)} sub={t.help}>
+                  {t.label}
+                </Opt>
+              ))}
+            </div>
+          ))}
+        </>
+      );
     case 'key':
       return (
         <div style={{ padding: 6 }} className="stack">
@@ -264,6 +334,18 @@ function PickerBody({ project, lib, rule, owner, path, kind, pick }: BlankPicker
         </form>
       );
     case 'choice': {
+      const parentType = String(getRuleAt(rule, [...path.slice(0, -1), 'type']));
+      const special = choiceOptions(String(last), parentType, path);
+      if (special)
+        return (
+          <>
+            {special.map(([v, label], i) => (
+              <Opt key={i} onClick={() => (v === UNWRAP ? pick(unwrap(path, rule), path.slice(0, -2)) : v === DROP ? pick(undefined) : pick(v))}>
+                {label}
+              </Opt>
+            ))}
+          </>
+        );
       const opts: [unknown, string][] =
         last === 'mode'
           ? [['pressed', 'pressed'], ['held', 'held'], ['released', 'released']]
@@ -350,4 +432,134 @@ function ValueList({ project, rule, owner, onPick, filter = () => true, title = 
       {!withNew && project.values.filter(filter).length === 0 && <div className="dim" style={{ padding: '2px 8px 6px' }}>No values yet.</div>}
     </>
   );
+}
+
+function ColorBody({ current, tintable, pick }: { current: string; tintable: boolean; pick: (v: unknown) => void }) {
+  const [color, setColor] = useState(current);
+  return (
+    <div className="stack" style={{ padding: 6 }}>
+      <div className="swatch-row">
+        {['#ffffff', '#ff5d8f', '#ff7a59', '#ffd166', '#5fe0b0', '#7cc4ff', '#b78cff', '#15131c'].map((c) => (
+          <button key={c} className="swatch" style={{ background: c }} aria-label={c} onClick={() => pick(c)} />
+        ))}
+      </div>
+      <input type="color" value={color} onChange={(e) => setColor(e.currentTarget.value)} aria-label="Colour" style={{ width: '100%', height: 32 }} />
+      <button className="btn small primary" onClick={() => pick(color)}>
+        Use this colour
+      </button>
+      {tintable && (
+        <button className="btn small" onClick={() => pick(null)}>
+          No colour (normal)
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Picked to replace maths with the number it wraps. */
+const UNWRAP = Symbol('unwrap');
+/** Picked to remove an optional flag (NOT). */
+const DROP = Symbol('drop');
+
+function choiceOptions(last: string, parentType: string, path: (string | number)[]): [unknown, string][] | null {
+  const parentKey = path[path.length - 2];
+  switch (last) {
+    case 'not':
+      return [[DROP, 'remove NOT (check it normally)']];
+    case 'button':
+      if (parentType === 'clicked') return [['left', 'is clicked'], ['right', 'is right-clicked']];
+      if (parentType === 'holdOn') return [['left', 'left mouse button'], ['right', 'right mouse button']];
+      return [['left', 'left mouse button'], ['right', 'right mouse button'], ['middle', 'middle mouse button']];
+    case 'mode':
+      if (parentType === 'hover') return [['enter', 'onto'], ['leave', 'off']];
+      if (parentType === 'fullscreen') return [['on', 'on'], ['off', 'off'], ['toggle', 'switch']];
+      return null;
+    case 'direction':
+      return parentType === 'wheel' ? [['up', 'up'], ['down', 'down']] : null;
+    case 'style':
+      return CURSORS.map((c) => [c, CURSOR_PHRASE[c]]);
+    case 'p':
+      return SETTABLE_PROPS.map((x) => [x, PROP_PHRASE[x]]);
+    case 'dir':
+      return [['left', 'faces left'], ['right', 'faces right'], ['flip', 'turns around']];
+    case 'solid':
+      return [[true, 'filled'], [false, 'empty']];
+    case 'f':
+      return parentKey === 'fn' ? [...MATH_FNS.map((x): [unknown, string] => [x, FN_PHRASE[x]]), [UNWRAP, 'no rounding (just the number)']] : null;
+    case 'op':
+      if (parentKey === 'math') return [...MATH_OPS.map((x): [unknown, string] => [x, x === 'random' ? 'a random number between' : MATH_PHRASE[x]]), [UNWRAP, 'no maths (keep the first number)']];
+      return null;
+    default:
+      return null;
+  }
+}
+
+/** The number maths wraps: the first number of a sum, or the number inside "rounded (…)". */
+function unwrap(path: (string | number)[], rule: Rule): unknown {
+  const parent = path.slice(0, -1);
+  return getRuleAt(rule, [...parent, path[path.length - 2] === 'fn' ? 'x' : 'a']) ?? { lit: 0 };
+}
+
+function PlaceOptions({ pick, at }: { pick: (v: unknown, at?: (string | number)[]) => void; at: (string | number)[] }) {
+  return (
+    <>
+      <Opt onClick={() => pick({ atMouse: { snap: { lit: 0 } } }, at)} sub="Wherever the pointer is">the mouse</Opt>
+      <Opt onClick={() => pick({ atMouse: { snap: { lit: 32 } } }, at)} sub="Lines up with a grid, for building with blocks">the mouse, snapped to a grid</Opt>
+      <Opt onClick={() => pick({ atTarget: { t: 'unset' } }, at)}>where an object is…</Opt>
+      <Opt onClick={() => pick({ near: { target: { t: 'unset' }, dx: { lit: 32 }, dy: { lit: 0 } } }, at)} sub="An object's position plus a few pixels">next to an object…</Opt>
+      <Opt onClick={() => pick({ at: { x: { lit: 0 }, y: { lit: 0 } } }, at)}>a spot (x, y)…</Opt>
+    </>
+  );
+}
+
+/** "this object" in Kind rules, else the Kind the trigger is about, else a blank to fill in. */
+function defaultTarget(rule: Rule, owner: RuleOwner): Target {
+  if (owner.type === 'kind') return { t: 'self' };
+  const bound = [...boundKinds(rule.trigger)];
+  return bound[0] ? { t: 'that', kindId: bound[0] } : { t: 'unset' };
+}
+
+/** Live readings, object properties and maths for a number blank. */
+function Readings({ current, defaultTarget: def, pick }: { current: Num | undefined; defaultTarget: Target; pick: (v: unknown) => void }) {
+  const of = current && 'prop' in current ? current.prop.of : def;
+  const inner: Num = current && !('unset' in current) ? current : { lit: 0 };
+  return (
+    <>
+      <details className="pick-more">
+        <summary>The mouse, time and camera</summary>
+        {GAME_PROPS.map((g) => (
+          <Opt key={g} onClick={() => pick({ game: g })}>
+            the {GAME_PROP_PHRASE[g]}
+          </Opt>
+        ))}
+      </details>
+      <details className="pick-more">
+        <summary>Something about an object</summary>
+        {PROPS.map((x) => (
+          <Opt key={x} onClick={() => pick({ prop: { of, p: x } })}>
+            its {PROP_PHRASE[x]}
+          </Opt>
+        ))}
+        <Opt onClick={() => pick({ between: { a: def, b: { t: 'unset' }, f: 'distance' } })}>the distance between two objects</Opt>
+        <Opt onClick={() => pick({ between: { a: def, b: { t: 'unset' }, f: 'angle' } })}>the angle from one object to another</Opt>
+        <Opt onClick={() => pick({ tile: { place: { atMouse: { snap: { lit: 0 } } } } })} sub="-1 when there is no tile">the tile number at a place</Opt>
+      </details>
+      <details className="pick-more">
+        <summary>Maths and random</summary>
+        <Opt onClick={() => pick({ math: { op: 'random', a: { lit: 1 }, b: { lit: 6 } } })} sub="Like rolling a dice">a random number</Opt>
+        <Opt onClick={() => pick({ math: { op: 'add', a: inner, b: { lit: 1 } } })} sub="+ − × ÷, smallest, biggest, power">do maths with this number</Opt>
+        <Opt onClick={() => pick({ fn: { f: 'round', x: inner } })} sub="Round, round down, without minus, square root, sine…">round or change this number</Opt>
+      </details>
+    </>
+  );
+}
+
+/** Every message name used by "send" actions and "message" triggers. */
+function messageNames(p: Project): string[] {
+  const out = new Set<string>();
+  for (const { rule } of allRules(p)) {
+    if (rule.trigger.type === 'message' && typeof rule.trigger.name === 'string') out.add(rule.trigger.name);
+    for (const a of rule.actions) if (a.type === 'sendMessage' && typeof a.name === 'string') out.add(a.name);
+  }
+  return [...out].sort();
 }

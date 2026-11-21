@@ -5,6 +5,7 @@ import { createGame, type Game } from '@/runtime/game';
 import { attachDomInput } from '@/runtime/input';
 import { PixiRenderer } from '@/runtime/render/pixi-renderer';
 import { attachFpsOverlay, fpsRequested } from '@/runtime/render/fps-overlay';
+import { browserPlatform, lockOnClick } from '@/runtime/platform';
 import type { Library } from '../assets/library';
 import { editorStore } from '../store';
 import { setUI } from '../ui-state';
@@ -42,6 +43,7 @@ export function PlayView({ project, lib }: { project: Project; lib: Library }) {
     let g: Game | null = null;
     let detach = () => {};
     let detachFps = () => {};
+    let detachLock = () => {};
     let dead = false;
     const audio = new WebAudio((id) => lib.url(id));
     void PixiRenderer.create(box.current!, { screen: { w: W, h: H }, pixelArt: snapshot.settings.pixelArt, textureUrl: (id) => lib.url(id), assetInfo: lib.info }).then((renderer) => {
@@ -49,8 +51,9 @@ export function PlayView({ project, lib }: { project: Project; lib: Library }) {
         renderer.destroy();
         return;
       }
-      g = createGame(snapshot, { renderer, audio, remember: null, assetInfo: lib.info, sceneId });
       const canvas = renderer.canvas;
+      g = createGame(snapshot, { renderer, audio, remember: null, assetInfo: lib.info, sceneId, platform: browserPlatform(canvas, wrap.current!) });
+      detachLock = lockOnClick(g, canvas);
       detach = attachDomInput(
         g.input,
         canvas,
@@ -58,7 +61,11 @@ export function PlayView({ project, lib }: { project: Project; lib: Library }) {
           const r = canvas.getBoundingClientRect();
           return { x: ((cx - r.left) / r.width) * W, y: ((cy - r.top) / r.height) * H };
         },
-        { ignoreKey: (e) => RESERVED_KEYS.has(e.code) || e.metaKey || e.ctrlKey },
+        {
+          ignoreKey: (e) => RESERVED_KEYS.has(e.code) || e.metaKey || e.ctrlKey,
+          blockContextMenu: snapshot.settings.blockContextMenu,
+          scale: () => W / (canvas.getBoundingClientRect().width || W),
+        },
       );
       const unlock = () => audio.unlock();
       window.addEventListener('pointerdown', unlock, { once: true });
@@ -69,13 +76,15 @@ export function PlayView({ project, lib }: { project: Project; lib: Library }) {
       g.start();
       // Dev builds only: lets end-to-end tests read values and objects of the running game.
       if (import.meta.env.DEV) Object.assign(window, { __stickwixGame: g });
-      if (fpsRequested()) detachFps = attachFpsOverlay(box.current!);
+      if (fpsRequested() || snapshot.settings.showFps) detachFps = attachFpsOverlay(box.current!);
       setGame(g);
     });
     return () => {
       dead = true;
       detach();
       detachFps();
+      detachLock();
+      if (document.pointerLockElement) document.exitPointerLock();
       if (g) {
         setUI({ lastRun: [...g.diagnostics] });
         g.stop();
@@ -101,7 +110,7 @@ export function PlayView({ project, lib }: { project: Project; lib: Library }) {
   }, []);
 
   return (
-    <div ref={wrap} className="play-wrap" data-testid="play-view">
+    <div ref={wrap} className="play-wrap" data-testid="play-view" style={{ background: project.settings.letterbox }}>
       <div className="game" style={{ width: W * scale, height: H * scale }}>
         <div ref={box} style={{ width: '100%', height: '100%' }} />
         {game && PLAY_OVERLAYS.map((O, i) => <O key={i} game={game} project={project} lib={lib} scale={scale} stop={() => setUI({ playing: false })} />)}

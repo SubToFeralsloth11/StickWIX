@@ -10,6 +10,7 @@ import { AddStickerMenu } from './AddStickerMenu';
 import { FrameImg } from '../assets/AssetBrowser';
 import { HelpTip } from '../help/HelpTip';
 import { DELETE_GUARD } from '../delete-guard';
+import { AnimationsSection, AppearanceSection } from './KindLooks';
 
 export interface KindSectionProps {
   project: Project;
@@ -35,7 +36,7 @@ export function Inspector({ project, lib }: PanelProps) {
   const object = objs.length === 1 ? scene.objects.find((o) => o.id === objs[0]!.id) : undefined;
   const kind = project.kinds.find((k) => k.id === (object?.kindId ?? kindSel?.id));
   if (kind) return <KindInspector project={project} lib={lib} kind={kind} object={object} scene={scene} />;
-  return <SceneSettings project={project} lib={lib} scene={scene} />;
+  return <SceneSettings lib={lib} scene={scene} />;
 }
 
 function KindInspector({ project, lib, kind, object, scene }: KindSectionProps) {
@@ -143,6 +144,9 @@ function KindInspector({ project, lib, kind, object, scene }: KindSectionProps) 
         )}
       </div>
 
+      {!perObject && <AnimationsSection kind={kind} lib={lib} readOnly={readOnly} />}
+      {!perObject && <AppearanceSection kind={kind} readOnly={readOnly} />}
+
       <div className="section" data-tour="stickers">
         <h4>
           Stickers <HelpTip text="Ready-made behaviours. Stick one on, then tune its sliders." />
@@ -156,6 +160,7 @@ function KindInspector({ project, lib, kind, object, scene }: KindSectionProps) 
             sticker={s}
             overrides={perObject ? (object?.overrides.stickers?.[s.id] ?? {}) : undefined}
             readOnly={readOnly}
+            animNames={kind.animations.map((a) => a.name)}
             onChange={(key, value) =>
               edit(perObject ? `Change this ${kind.name}` : `Change every ${kind.name}`, (d) =>
                 ops.setStickerSetting(d, kind.id, s.id, key, value, perObject && object ? { sceneId: scene.id, objectId: object.id } : undefined),
@@ -245,7 +250,7 @@ function ObjectSection({ object, scene, readOnly }: { object: ObjectInstance; sc
   );
 }
 
-function SceneSettings({ project, lib, scene }: { project: Project; lib: Library; scene: Scene }) {
+function SceneSettings({ lib, scene }: { lib: Library; scene: Scene }) {
   const readOnly = useEditor((s) => s.readOnly);
   const { edit } = editorStore.getState();
   // Built-in backgrounds plus any picture you drew or imported.
@@ -312,56 +317,8 @@ function SceneSettings({ project, lib, scene }: { project: Project; lib: Library
           />
         )}
       </div>
-      <div className="section">
-        <h4>Whole game</h4>
-        <label className="stack" style={{ gap: 4 }}>
-          <span className="muted">Music</span>
-          <select
-            className="field"
-            value={project.settings.backgroundMusic ?? ''}
-            disabled={readOnly}
-            onChange={(e) => edit('Change music', (d) => void (d.settings.backgroundMusic = e.target.value || null))}
-          >
-            <option value="">No music</option>
-            {lib
-              .sounds()
-              .filter((s) => s.category === 'music' || s.category === 'mine')
-              .map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-          </select>
-        </label>
-        <div className="row" style={{ marginTop: 8 }}>
-          <span className="muted">Screen</span>
-          <select
-            className="field"
-            value={`${project.settings.screenWidth}x${project.settings.screenHeight}`}
-            disabled={readOnly}
-            onChange={(e) => {
-              const [w, h] = e.target.value.split('x').map(Number) as [number, number];
-              edit('Change screen size', (d) => {
-                d.settings.screenWidth = w;
-                d.settings.screenHeight = h;
-                for (const s of d.scenes) {
-                  s.width = Math.max(s.width, w);
-                  s.height = Math.max(s.height, h);
-                }
-              });
-            }}
-          >
-            {['640x360', '800x450', '960x540', '1280x720', '640x480', '800x600', '480x640'].map((s) => (
-              <option key={s} value={s}>
-                {s.replace('x', ' × ')}
-              </option>
-            ))}
-          </select>
-        </div>
-        <label className="row" style={{ marginTop: 8 }}>
-          <input type="checkbox" checked={project.settings.pixelArt} disabled={readOnly} onChange={(e) => edit('Change pixel art', (d) => void (d.settings.pixelArt = e.target.checked))} />
-          Crisp pixel art <HelpTip text="Keeps pixel art sharp when the game is scaled up." />
-        </label>
+      <div className="muted" style={{ fontSize: 12.5 }}>
+        Screen size, music, the mouse pointer, pointer lock, pause key and more are in <b>Game settings</b>.
       </div>
     </div>
   );

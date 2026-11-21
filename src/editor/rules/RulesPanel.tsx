@@ -1,13 +1,14 @@
-import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { useMemo, useState, type ComponentType } from 'react';
 import { allRules, ruleStates, type RuleOwner } from '@/model/references';
-import { ACTIONS, TRIGGERS } from '@/model/rule-templates';
+import { ACTIONS, TRIGGERS, type Template } from '@/model/rule-templates';
 import type { ActionType, TriggerType } from '@/model/schema';
 import type { PanelProps } from '../panels';
 import { editorStore, useEditor } from '../store';
 import { setUI, useUI } from '../ui-state';
 import * as R from '../store/rule-ops';
 import { SentenceCard } from './SentenceCard';
+import { TemplateMenu } from './TemplateMenu';
+import { BlockBoard } from './BlockBoard';
 
 /** Extra buttons next to "New rule" (the rule preset menu). Receives the owner new rules go to. */
 export const RULES_TOOLBAR: ComponentType<PanelProps & { owner: RuleOwner }>[] = [];
@@ -36,6 +37,7 @@ export function RulesPanel({ project, lib }: PanelProps) {
     return undefined;
   })();
   const [filter, setFilter] = useState<string>('here');
+  const [board, setBoard] = useState(false);
   const scene = project.scenes.find((s) => s.id === sceneId)!;
 
   const owners: { owner: RuleOwner; label: string }[] = [
@@ -76,8 +78,20 @@ export function RulesPanel({ project, lib }: PanelProps) {
           {RULES_TOOLBAR.map((T, i) => (
             <T key={i} project={project} lib={lib} owner={newOwner} />
           ))}
+          <button className="btn board-btn" onClick={() => setBoard(true)} title="See these rules as blocks joined by glowing wires" data-testid="open-block-board">
+            ⧉ Block board
+          </button>
         </div>
       )}
+      <BlockBoard
+        open={board}
+        onOpenChange={setBoard}
+        project={project}
+        lib={lib}
+        readOnly={readOnly}
+        states={states}
+        sections={visible.map(({ owner, label }) => ({ owner, label, rules: rulesOf(project, owner) })).filter((x) => x.rules.length > 0)}
+      />
       {visible.map(({ owner, label }) => {
         const list = rulesOf(project, owner);
         if (!list.length && !(owner.type === 'scene' && owner.id === sceneId) && ownerKey(owner) !== filter) return null;
@@ -134,49 +148,30 @@ export function RulesPanel({ project, lib }: PanelProps) {
 /** Two-step menu: what starts the rule, then what it does first. */
 function NewRuleMenu({ onCreate }: { onCreate: (t: TriggerType, a: ActionType) => void }) {
   const [trigger, setTrigger] = useState<TriggerType | null>(null);
+  const [open, setOpen] = useState(false);
   return (
-    <DropdownMenu.Root onOpenChange={(o) => !o && setTrigger(null)}>
-      <DropdownMenu.Trigger asChild>
+    <TemplateMenu<unknown>
+      key={trigger ?? 'when'}
+      open={open}
+      onOpenChange={(o) => {
+        setOpen(o);
+        if (!o) setTrigger(null);
+      }}
+      stayOpen={trigger === null}
+      title={trigger === null ? '1. When…' : `2. When ${TRIGGERS[trigger].label}, then…`}
+      templates={(trigger === null ? TRIGGERS : ACTIONS) as Record<string, Template<unknown>>}
+      onPick={(k) => {
+        if (trigger === null) setTrigger(k as TriggerType);
+        else {
+          onCreate(trigger, k as ActionType);
+          setTrigger(null);
+        }
+      }}
+      trigger={
         <button className="btn primary" data-testid="new-rule" data-tour="new-rule">
           ＋ New rule
         </button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Portal>
-        <DropdownMenu.Content className="pop" sideOffset={6} align="start">
-          {trigger === null ? (
-            <>
-              <h6>1. When…</h6>
-              {Object.entries(TRIGGERS).map(([k, t]) => (
-                <DropdownMenu.Item
-                  key={k}
-                  className="opt"
-                  onSelect={(e) => {
-                    e.preventDefault();
-                    setTrigger(k as TriggerType);
-                  }}
-                >
-                  <span>
-                    {t.label}
-                    <small>{t.help}</small>
-                  </span>
-                </DropdownMenu.Item>
-              ))}
-            </>
-          ) : (
-            <>
-              <h6>2. …then</h6>
-              {Object.entries(ACTIONS).map(([k, a]) => (
-                <DropdownMenu.Item key={k} className="opt" onSelect={() => onCreate(trigger, k as ActionType)}>
-                  <span>
-                    {a.label}
-                    <small>{a.help}</small>
-                  </span>
-                </DropdownMenu.Item>
-              ))}
-            </>
-          )}
-        </DropdownMenu.Content>
-      </DropdownMenu.Portal>
-    </DropdownMenu.Root>
+      }
+    />
   );
 }
