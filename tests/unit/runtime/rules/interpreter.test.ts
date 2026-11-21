@@ -213,6 +213,28 @@ describe('rule interpreter', () => {
       g.run(25);
       expect(g.values.get('lives')).toBe(1);
     });
+
+    it('"any Dirt or Oak" matches either Kind and binds "that Dirt" to the one involved', () => {
+      const { game: g } = game({
+        values: VALUES,
+        kinds: [{ id: 'dirt' }, { id: 'oak' }, { id: 'stone' }],
+        objects: [
+          { id: 'd', kind: 'dirt', x: 0, y: 0 },
+          { id: 'o', kind: 'oak', x: 100, y: 0 },
+          { id: 's', kind: 'stone', x: 200, y: 0 },
+        ],
+        rules: [rule('r', { type: 'clicked', target: { t: 'any', kindId: 'dirt', or: ['oak'] } }, [{ type: 'destroy', target: that('dirt') }, add('score')])],
+      });
+      g.input.mouseDown(110, 10);
+      g.run(1);
+      g.input.mouseUp(110, 10);
+      g.input.mouseDown(210, 10);
+      g.run(1);
+      expect(g.scene.world.get('o')).toBeUndefined();
+      expect(g.scene.world.get('d')).toBeDefined();
+      expect(g.scene.world.get('s')).toBeDefined();
+      expect(g.values.get('score')).toBe(1);
+    });
   });
 
   it(`cuts a runaway chain at depth ${MAX_DEPTH}, flags the rule and keeps the game running (FR-022)`, () => {

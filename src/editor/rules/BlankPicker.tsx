@@ -60,7 +60,7 @@ export function BlankPicker(props: BlankPickerProps) {
   );
 }
 
-function PickerBody({ project, lib, rule, owner, path, kind, pick }: BlankPickerProps & { pick: (v: unknown, at?: (string | number)[]) => void }) {
+function PickerBody({ project, lib, rule, owner, path, kind, pick, onPick }: BlankPickerProps & { pick: (v: unknown, at?: (string | number)[]) => void }) {
   const inTrigger = path[0] === 'trigger';
   const quant = path[0] === 'actions' && !path.some((k) => k === 'atTarget' || k === 'prop' || k === 'between' || k === 'near' || k === 'to') ? 'every' : 'any';
   const last = path[path.length - 1];
@@ -106,6 +106,35 @@ function PickerBody({ project, lib, rule, owner, path, kind, pick }: BlankPicker
               {quant} {k.name}
             </Opt>
           ))}
+          {kinds.length > 1 && (
+            <>
+              <h6>Or several Kinds</h6>
+              <div className="dim" style={{ padding: '0 8px 4px', fontSize: 12, maxWidth: 260 }}>
+                Tick every Kind that should count, like Dirt, Oak and Grass.
+              </div>
+              {kinds.map((k) => {
+                const cur = current && typeof current === 'object' && 't' in current && current.t === 'any' ? (current as Extract<Target, { t: 'any' }>) : undefined;
+                const group = cur ? [cur.kindId, ...(cur.or ?? [])] : [];
+                const on = group.includes(k.id);
+                return (
+                  <label key={k.id} className="opt" style={{ cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={on}
+                      // The first Kind names the group ("that Dirt"); pick another above to change it.
+                      disabled={cur?.kindId === k.id}
+                      onChange={() => {
+                        if (!cur) return onPick({ t: 'any', kindId: k.id });
+                        const or = on ? cur.or!.filter((x) => x !== k.id) : [...(cur.or ?? []), k.id];
+                        onPick(or.length ? { t: 'any', kindId: cur.kindId, or } : { t: 'any', kindId: cur.kindId });
+                      }}
+                    />
+                    <span>{k.name}</span>
+                  </label>
+                );
+              })}
+            </>
+          )}
           <h6>One particular object</h6>
           {scenes.flatMap((s) =>
             s.objects.map((o, i) => {

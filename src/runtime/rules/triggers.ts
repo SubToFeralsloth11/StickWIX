@@ -60,7 +60,7 @@ function accepts(t: Target, inst: Instance, ownerKind: string | undefined, b: Bi
       break;
     case 'any':
     case 'that':
-      ok = inst.kindId === t.kindId;
+      ok = inst.kindId === t.kindId || (t.t === 'any' && !!t.or?.includes(inst.kindId));
       if (ok) b.that.set(t.kindId, inst.id);
       break;
     case 'self':

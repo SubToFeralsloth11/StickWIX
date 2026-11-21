@@ -18,7 +18,8 @@ const orUnset = <T extends z.ZodTypeAny>(t: T) => z.union([t, Unset]);
 
 export const Target = z.discriminatedUnion('t', [
   z.object({ t: z.literal('object'), id: Id }),
-  z.object({ t: z.literal('any'), kindId: Id }),
+  // `or`: more Kinds that also count ("any Dirt, Oak or Grass"); "that Dirt" then means whichever one it was.
+  z.object({ t: z.literal('any'), kindId: Id, or: z.array(Id).max(30).optional() }),
   z.object({ t: z.literal('that'), kindId: Id }),
   z.object({ t: z.literal('self') }),
   z.object({ t: z.literal('ui'), id: Id }),

@@ -61,7 +61,7 @@ export function resolveTarget(t: Target, b: Binding, host: RuleHost): Instance[]
       return i ? [i] : [];
     }
     case 'any':
-      return w.byKind(t.kindId);
+      return t.or?.length ? [t.kindId, ...t.or].flatMap((k) => w.byKind(k)) : w.byKind(t.kindId);
     case 'that': {
       const id = b.that.get(t.kindId);
       const i = id ? w.get(id) : undefined;

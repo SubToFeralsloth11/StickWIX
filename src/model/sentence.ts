@@ -106,6 +106,16 @@ export function ruleSegments(rule: Rule, p: Project, names: NameLookup = {}): Se
   };
   const missing = '(deleted)';
   const kindName = (id: string) => kinds.get(id) ?? missing;
+  /** "Dirt, Oak or Grass": the Kind plus any extra Kinds that also count (deleted ones dropped). */
+  const kindList = (id: string, or: string[] | undefined) => {
+    const names = [kindName(id), ...(or ?? []).flatMap((k) => (kinds.has(k) ? [kinds.get(k)!] : []))];
+    return names.length === 1 ? names[0]! : `${names.slice(0, -1).join(', ')} or ${names[names.length - 1]}`;
+  };
+  // "that Dirt" names the whole group when the When part said "any Dirt, Oak or Grass".
+  const tr = rule.trigger;
+  const groups = new Map<string, string[]>();
+  for (const t of [...('target' in tr ? [tr.target] : []), ...('a' in tr ? [tr.a, tr.b] : [])])
+    if (t.t === 'any' && t.or?.length) groups.set(t.kindId, t.or);
 
   const target = (t: Target, path: (string | number)[]) => {
     switch (t.t) {
@@ -113,9 +123,9 @@ export function ruleSegments(rule: Rule, p: Project, names: NameLookup = {}): Se
       case 'any': {
         // In actions "any" acts on every object of the Kind (place targets use the first one); conditions check any.
         const quant = path[0] === 'actions' && !path.some((k) => k === 'atTarget' || k === 'prop' || k === 'between' || k === 'near' || k === 'to') ? 'every' : 'any';
-        return blank('target', path, `${quant} ${kindName(t.kindId)}`);
+        return blank('target', path, `${quant} ${kindList(t.kindId, t.or)}`);
       }
-      case 'that': return blank('target', path, `that ${kindName(t.kindId)}`);
+      case 'that': return blank('target', path, `that ${kindList(t.kindId, groups.get(t.kindId))}`);
       case 'self': return blank('target', path, 'this object');
       case 'ui': return blank('target', path, ui.get(t.id) ?? missing);
       case 'unset': return blank('target', path, undefined, true);
