@@ -14,6 +14,7 @@ export default defineSticker({
     { key: 'gravity', kind: 'slider', label: 'Gravity', help: 'How strongly it falls back down.', min: 100, max: 5000, step: 50 },
     { key: 'airControl', kind: 'slider', label: 'Air control', help: 'How much you can steer while in the air (0 none, 1 full).', min: 0, max: 1, step: 0.05 },
     { key: 'coyoteMs', kind: 'slider', label: 'Late jump time', help: 'You can still jump this long after running off a ledge.', min: 0, max: 500, step: 10, unit: 'ms' },
+    { key: 'extraJumps', kind: 'slider', label: 'Air jumps', help: 'Extra jumps in the air (1 = double jump).', min: 0, max: 5, step: 1 },
     { key: 'jumpBufferMs', kind: 'slider', label: 'Early jump time', help: 'A jump pressed this long before landing still counts.', min: 0, max: 500, step: 10, unit: 'ms' },
     {
       key: 'keys', kind: 'choice', label: 'Keys', help: 'Which keys move it.',
@@ -45,6 +46,7 @@ export default defineSticker({
       if ((state.air as number) >= 2) ctx.emit({ type: 'sticker', id: inst.id, event: 'lands' });
       state.air = 0;
       state.coyote = s.coyoteMs / 1000;
+      state.airJumps = s.extraJumps;
     } else {
       state.air = (state.air as number) + 1;
       state.coyote = (state.coyote as number) - ctx.dt;
@@ -69,6 +71,13 @@ export default defineSticker({
         inst.grounded = false;
         state.buffer = 0;
         state.coyote = 0;
+        state.rising = true;
+        ctx.emit({ type: 'sticker', id: inst.id, event: 'jumps' });
+      } else if ((state.buffer as number) > 0 && ((state.airJumps as number) ?? 0) > 0 && !inst.grounded && s.jumpHeight > 0) {
+        const a = (s.gravity * ctx.dt) / 2;
+        inst.vy = -(a + Math.sqrt(a * a + 2 * s.gravity * s.jumpHeight));
+        state.airJumps = (state.airJumps as number) - 1;
+        state.buffer = 0;
         state.rising = true;
         ctx.emit({ type: 'sticker', id: inst.id, event: 'jumps' });
       }

@@ -23,6 +23,24 @@ export function triggerTypesFor(e: RuntimeEvent): TriggerType[] {
       return ['leavesScene'];
     case 'sticker':
       return ['sticker'];
+    case 'holding':
+      return ['holdOn'];
+    case 'mouse':
+      return ['mouse'];
+    case 'wheel':
+      return ['wheel'];
+    case 'hover':
+      return ['hover'];
+    case 'letGo':
+      return ['letGo'];
+    case 'frame':
+      return ['everyFrame'];
+    case 'message':
+      return ['message'];
+    case 'untouch':
+      return ['stopsTouching'];
+    case 'animEnd':
+      return ['animEnds'];
     case 'timer':
       return [];
   }
@@ -79,13 +97,14 @@ export function matchTrigger(
       return e.type === 'sceneStart' ? b : null;
     case 'key':
       if (e.type !== 'key' || typeof trigger.key !== 'string') return null;
-      return e.key === trigger.key && e.mode === trigger.mode ? b : null;
+      return (e.key === trigger.key || trigger.key === 'AnyKey') && e.mode === trigger.mode ? b : null;
     case 'clicked':
-      if (e.type !== 'clicked') return null;
+      if (e.type !== 'clicked' || (trigger.button ?? 'left') !== (e.button ?? 'left')) return null;
       if (e.ui) return trigger.target.t === 'ui' && trigger.target.id === e.id ? b : null;
       return one(trigger.target, e.id);
-    case 'touches': {
-      if (e.type !== 'touch') return null;
+    case 'touches':
+    case 'stopsTouching': {
+      if (e.type !== (trigger.type === 'touches' ? 'touch' : 'untouch') || (e.type !== 'touch' && e.type !== 'untouch')) return null;
       const A = lookup(e.a);
       const B = lookup(e.b);
       if (!A || !B) return null;
@@ -127,8 +146,29 @@ export function matchTrigger(
       return e.type === 'leavesScene' ? one(trigger.target, e.id) : null;
     case 'sticker':
       return e.type === 'sticker' && e.event === trigger.event ? one(trigger.target, e.id) : null;
+    case 'holdOn': {
+      if (e.type !== 'holding' || (trigger.button ?? 'left') !== e.button) return null;
+      const secs = evalNum(trigger.seconds, b, host);
+      return secs !== null && e.from < secs && e.to >= secs ? one(trigger.target, e.id) : null;
+    }
+    case 'mouse':
+      return e.type === 'mouse' && e.button === trigger.button && e.mode === trigger.mode ? b : null;
+    case 'wheel':
+      return e.type === 'wheel' && e.direction === trigger.direction ? b : null;
+    case 'hover':
+      return e.type === 'hover' && e.mode === trigger.mode ? one(trigger.target, e.id) : null;
+    case 'letGo':
+      return e.type === 'letGo' ? one(trigger.target, e.id) : null;
+    case 'everyFrame':
+      return e.type === 'frame' ? b : null;
+    case 'message':
+      return e.type === 'message' && typeof trigger.name === 'string' && trigger.name.trim().toLowerCase() === e.name.trim().toLowerCase() ? b : null;
+    case 'animEnds':
+      return e.type === 'animEnd' ? one(trigger.target, e.id) : null;
     case 'every':
     case 'after':
+    case 'becomes':
+    case 'whileTrue':
       return null;
   }
 }

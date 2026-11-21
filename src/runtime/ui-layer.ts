@@ -17,6 +17,8 @@ export interface UIBox {
   w: number;
   h: number;
   text: string;
+  /** Bars: how full, 0..1. */
+  fill?: number;
 }
 
 /**
@@ -36,6 +38,7 @@ export function layoutUI(
   let h: number;
   const img = lookId ? imageSize(lookId) : undefined;
   if (el.type === 'image' && img) ({ w, h } = img);
+  else if (el.type === 'bar' || el.type === 'panel') ({ w, h } = el);
   else if (el.type === 'button') {
     w = Math.max(img?.w ?? 0, estimateTextWidth(text, el.style.size) + 32);
     h = Math.max(img?.h ?? 0, el.style.size + 20);
@@ -48,10 +51,16 @@ export function layoutUI(
 
 /** Runtime state of a scene's screen layer: visibility and looks changed by rules. */
 export class UILayer {
-  readonly state = new Map<string, { hidden: boolean; lookId: string | null | undefined }>();
+  readonly state = new Map<string, { hidden: boolean; lookId: string | null | undefined; text?: string }>();
 
   constructor(readonly elements: UIElement[]) {
     for (const el of elements) this.state.set(el.id, { hidden: el.hidden, lookId: el.lookId });
+  }
+
+  /** Rule "text becomes": replaces the item's text (with {Value} placeholders). */
+  setText(id: string, text: string) {
+    const s = this.state.get(id);
+    if (s) s.text = text;
   }
 
   setHidden(id: string, hidden: boolean) {
@@ -65,12 +74,19 @@ export class UILayer {
   }
 
   /** Visible elements with their boxes, in draw order. */
-  boxes(screen: { w: number; h: number }, format: (t: string) => string, imageSize: (id: string) => { w: number; h: number } | undefined) {
+  boxes(
+    screen: { w: number; h: number },
+    format: (t: string) => string,
+    imageSize: (id: string) => { w: number; h: number } | undefined,
+    valueOf: (name: string) => number | undefined = () => undefined,
+  ) {
     const out: { el: UIElement; box: UIBox; lookId: string | null | undefined }[] = [];
     for (const el of this.elements) {
       const s = this.state.get(el.id)!;
       if (s.hidden) continue;
-      out.push({ el, box: layoutUI(el, format(el.text), screen, imageSize, s.lookId), lookId: s.lookId });
+      const box = layoutUI(el, format(s.text ?? el.text), screen, imageSize, s.lookId);
+      if (el.type === 'bar') box.fill = Math.min(1, Math.max(0, (valueOf(el.valueName) ?? 0) / el.max));
+      out.push({ el, box, lookId: s.lookId });
     }
     return out;
   }

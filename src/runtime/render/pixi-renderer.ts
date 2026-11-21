@@ -125,11 +125,20 @@ export class PixiRenderer implements Renderer {
   private objects = new Container();
   private ui = new Container();
   private overlay = new Container();
+  /** Cracks, health bars and sparks, drawn in scene space above objects. */
+  private fx = new Graphics();
+  private bubbles = new Map<string, Text>();
+  /** Instances with cracks, bars or bubbles this frame (`view.instances` can only be walked once). */
+  private fxList: Instance[] = [];
+  private tileSprites = new Map<string, { s: Sprite; index: number }>();
+  private flashG = new Graphics();
+  private cursorSprite = new Sprite();
+  private pausedText: Text | null = null;
   private sprites = new Map<string, Sprite>();
   private uiNodes = new Map<string, { box: Graphics; label: Text; img: Sprite }>();
   private popups: Text[] = [];
-  /** Tile sprites are rebuilt only when the layer or tile set object changes (edits produce new objects). */
-  private drawnTiles: { layer: object; tileSet: object | undefined } | null = null;
+  /** Tile sprites are updated only when the tile set, cell size or live tile version changes. */
+  private drawnTiles: { cells: object; tileSet: object | undefined; version: number } | null = null;
   private bgKey = '';
   private destroyed = false;
 
@@ -154,9 +163,11 @@ export class PixiRenderer implements Renderer {
     r.app.canvas.style.display = 'block';
     if (o.pixelArt) r.app.canvas.style.imageRendering = 'pixelated';
     parent.appendChild(r.app.canvas);
-    r.world.addChild(r.tiles, r.objects);
+    r.world.addChild(r.tiles, r.objects, r.fx);
     r.objects.sortableChildren = true;
-    r.app.stage.addChild(r.bg, r.world, r.ui, r.overlay);
+    r.cursorSprite.anchor.set(0.5);
+    r.cursorSprite.visible = false;
+    r.app.stage.addChild(r.bg, r.world, r.ui, r.overlay, r.flashG, r.cursorSprite);
     // Rendering is driven by Game.frame, not Pixi's own ticker.
     r.app.ticker.stop();
     return r;
@@ -177,11 +188,94 @@ export class PixiRenderer implements Renderer {
     if (this.destroyed) return;
     this.drawBackground(v);
     this.drawTiles(v);
-    this.world.position.set(Math.round(-v.camera.x + v.camera.offset.x), Math.round(-v.camera.y + v.camera.offset.y));
+    const z = v.camera.zoom;
+    this.world.scale.set(z);
+    this.world.position.set(Math.round(-v.camera.x * z + v.camera.offset.x), Math.round(-v.camera.y * z + v.camera.offset.y));
     this.drawObjects(v);
+    this.drawFx(v);
     this.drawUI(v);
     this.drawPopups(v);
+    this.drawScreenFx(v);
     this.app.renderer.render(this.app.stage);
+  }
+
+  /** Cracks on breaking objects, health bars, speech bubbles and sparks. */
+  private drawFx(v: GameView) {
+    const g = this.fx;
+    g.clear();
+    const seenBubbles = new Set<string>();
+    for (const i of this.fxList) {
+      if (i.crack > 0) {
+        const k = i.crack;
+        g.rect(i.x, i.y, i.w, i.h).fill({ color: 0x000000, alpha: 0.35 * k });
+        // Cracks spread from the middle as the object breaks.
+        const cx = i.x + i.w / 2;
+        const cy = i.y + i.h / 2;
+        const n = 2 + Math.floor(k * 5);
+        for (let j = 0; j < n; j++) {
+          const a = j * 2.4 + 0.6;
+          const len = (Math.min(i.w, i.h) / 2) * Math.min(1, k * 1.4);
+          const mx = cx + Math.cos(a) * len * 0.5 + Math.sin(a * 3) * 2;
+          const my = cy + Math.sin(a) * len * 0.5;
+          g.moveTo(cx, cy).lineTo(mx, my).lineTo(cx + Math.cos(a + 0.3) * len, cy + Math.sin(a + 0.3) * len);
+        }
+        g.stroke({ color: 0x15131c, width: Math.max(1, Math.min(i.w, i.h) / 16), alpha: 0.85 });
+        g.rect(i.x, i.y - 7, i.w, 4).fill({ color: 0x15131c, alpha: 0.8 }).rect(i.x, i.y - 7, i.w * k, 4).fill(0xffd166);
+      }
+      if (i.bar) {
+        const w = Math.max(24, i.w);
+        const x = i.x + i.w / 2 - w / 2;
+        const f = Math.max(0, Math.min(1, i.bar.v / i.bar.max));
+        g.roundRect(x, i.y - 10, w, 5, 2).fill({ color: 0x15131c, alpha: 0.85 }).roundRect(x, i.y - 10, w * f, 5, 2).fill(f > 0.5 ? 0x5fe0b0 : f > 0.25 ? 0xffd166 : 0xff5d8f);
+      }
+      if (i.say) {
+        seenBubbles.add(i.id);
+        let t = this.bubbles.get(i.id);
+        if (!t) {
+          t = new Text({ text: '', style: { fontFamily: FONTS.round.family, fontWeight: '700', fontSize: 14, fill: '#15131c', wordWrap: true, wordWrapWidth: 180, align: 'center' } });
+          t.anchor.set(0.5, 1);
+          this.bubbles.set(i.id, t);
+          this.world.addChild(t);
+        }
+        t.text = i.say.text;
+        const bx = i.x + i.w / 2;
+        const by = i.y - 14;
+        t.position.set(bx, by - 6);
+        g.roundRect(bx - t.width / 2 - 8, by - t.height - 12, t.width + 16, t.height + 12, 8).fill(0xffffff).stroke({ color: 0x15131c, width: 2 });
+        g.poly([bx - 6, by, bx + 6, by, bx, by + 8]).fill(0xffffff);
+      }
+    }
+    for (const [id, t] of this.bubbles)
+      if (!seenBubbles.has(id)) {
+        t.destroy();
+        this.bubbles.delete(id);
+      }
+    for (const p of v.particles) g.rect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size).fill({ color: p.color, alpha: Math.max(0, p.life / p.max) });
+  }
+
+  /** Screen flash, the custom pointer and the pause sign. */
+  private drawScreenFx(v: GameView) {
+    this.flashG.clear();
+    if (v.flash && v.flash.alpha > 0) this.flashG.rect(0, 0, v.screen.w, v.screen.h).fill({ color: v.flash.color, alpha: v.flash.alpha * 0.8 });
+    const c = v.cursor;
+    if (this.app.canvas.style.cursor !== c.css) this.app.canvas.style.cursor = c.css === 'look' ? 'none' : c.css;
+    const tex = c.look ? this.textures.frame(c.look, 0) : null;
+    this.cursorSprite.visible = !!tex && !v.frozen;
+    if (tex) {
+      if (this.cursorSprite.texture !== tex) this.cursorSprite.texture = tex;
+      const k = c.size / Math.max(tex.width, tex.height);
+      this.cursorSprite.scale.set(k);
+      this.cursorSprite.position.set(c.x, c.y);
+    }
+    if (v.paused && !this.pausedText) {
+      this.pausedText = new Text({ text: 'Paused', style: { fontFamily: FONTS.round.family, fontWeight: '800', fontSize: 48, fill: '#ffffff', stroke: { color: '#15131c', width: 8, join: 'round' } } });
+      this.pausedText.anchor.set(0.5);
+      this.overlay.addChild(this.pausedText);
+    }
+    if (this.pausedText) {
+      this.pausedText.visible = v.paused;
+      this.pausedText.position.set(v.screen.w / 2, v.screen.h / 2);
+    }
   }
 
   private drawBackground(v: GameView) {
@@ -217,31 +311,53 @@ export class PixiRenderer implements Renderer {
   private drawTiles(v: GameView) {
     const layer = v.scene.tileLayer;
     const ts = v.tileSet;
-    if (this.drawnTiles && this.drawnTiles.layer === layer && this.drawnTiles.tileSet === ts) return;
+    const cells = v.tiles?.cells ?? layer.cells;
+    const version = v.tiles?.version ?? 0;
+    const d = this.drawnTiles;
+    if (d && d.cells === cells && d.tileSet === ts && d.version === version) return;
     const sheet = ts ? this.textures.image(ts.assetId) : null;
     if (ts && !sheet) return; // not loaded yet
-    // Same for a missing tile sheet: draw placeholders now, try again next frame.
-    this.drawnTiles = sheet === this.textures.placeholder ? null : { layer, tileSet: ts };
-    this.tiles.removeChildren().forEach((c) => c.destroy());
+    if (!d || d.tileSet !== ts || d.cells !== cells) {
+      for (const { s } of this.tileSprites.values()) s.destroy();
+      this.tileSprites.clear();
+    }
+    // A missing tile sheet draws placeholders now and tries again next frame.
+    this.drawnTiles = sheet === this.textures.placeholder ? null : { cells, tileSet: ts, version };
     if (!ts) return;
-    for (const [cell, index] of Object.entries(layer.cells)) {
-      const [x, y] = cell.split(',').map(Number) as [number, number];
+    // Only cells that changed get new sprites, so digging in a big tile world stays fast.
+    for (const [cell, index] of Object.entries(cells)) {
+      const have = this.tileSprites.get(cell);
+      if (have && have.index === index) continue;
       const tex = this.textures.tile(ts.assetId, index, ts.tileSize, ts.columns);
       if (!tex) continue;
+      if (have) {
+        have.s.texture = tex;
+        have.index = index;
+        continue;
+      }
+      const [x, y] = cell.split(',').map(Number) as [number, number];
       const s = new Sprite(tex);
       s.position.set(x * layer.cellSize, y * layer.cellSize);
       s.width = layer.cellSize;
       s.height = layer.cellSize;
       s.cullable = true;
       this.tiles.addChild(s);
+      this.tileSprites.set(cell, { s, index });
     }
+    for (const [cell, { s }] of this.tileSprites)
+      if (!(cell in cells)) {
+        s.destroy();
+        this.tileSprites.delete(cell);
+      }
   }
 
   private drawObjects(v: GameView) {
     const seen = new Set<string>();
     const fps = (id: string) => this.o.assetInfo(id)?.fps ?? 8;
+    this.fxList.length = 0;
     for (const i of v.instances) {
       seen.add(i.id);
+      if (!i.hidden && (i.crack > 0 || i.bar || i.say)) this.fxList.push(i);
       let s = this.sprites.get(i.id);
       if (!s) {
         s = new Sprite();
@@ -264,7 +380,7 @@ export class PixiRenderer implements Renderer {
     let tex: Texture | null;
     if (!look) tex = this.textures.placeholder;
     else {
-      const frame = i.anim ? i.anim.frame : Math.floor(time * fps(look));
+      const frame = i.anim ? i.anim.frame : (i.still ?? Math.floor(time * fps(look)));
       tex = this.textures.frame(look, frame);
     }
     s.visible = !i.hidden && tex !== null;
@@ -274,7 +390,8 @@ export class PixiRenderer implements Renderer {
     s.scale.set((i.w / tex.width) * flip * i.pop, (i.h / tex.height) * i.pop);
     s.position.set(i.x + i.w / 2, i.y + i.h / 2);
     s.rotation = (i.rotation * Math.PI) / 180;
-    s.alpha = i.alpha;
+    s.alpha = i.alpha * i.opacity;
+    s.tint = i.tint ?? 0xffffff;
     s.zIndex = i.layer;
   }
 
@@ -296,7 +413,10 @@ export class PixiRenderer implements Renderer {
         fill: el.style.color,
         stroke: { color: '#15131c', width: Math.max(2, el.style.size / 8), join: 'round' },
       };
-      n.label.text = el.type === 'image' ? '' : box.text;
+      n.label.text = el.type === 'image' || el.type === 'bar' || el.type === 'panel' ? '' : box.text;
+      n.box.alpha = el.opacity;
+      n.label.alpha = el.opacity;
+      n.img.alpha = el.opacity;
       n.label.anchor.set(el.type === 'button' ? 0.5 : 0, el.type === 'button' ? 0.5 : 0);
       n.label.position.set(el.type === 'button' ? box.x + box.w / 2 : box.x, el.type === 'button' ? box.y + box.h / 2 : box.y);
       const tex = lookId ? this.textures.image(lookId) : null;
@@ -309,7 +429,16 @@ export class PixiRenderer implements Renderer {
       }
       n.box.clear();
       if (el.type === 'button' && !tex)
-        n.box.roundRect(box.x, box.y + 3, box.w, box.h, 10).fill('#15131c').roundRect(box.x, box.y, box.w, box.h, 10).fill('#ff7a59').stroke({ color: '#15131c', width: 2 });
+        n.box.roundRect(box.x, box.y + 3, box.w, box.h, 10).fill('#15131c').roundRect(box.x, box.y, box.w, box.h, 10).fill(el.fill === '#5fe0b0' ? '#ff7a59' : el.fill).stroke({ color: '#15131c', width: 2 });
+      else if (el.type === 'panel' && !tex) n.box.roundRect(box.x, box.y, box.w, box.h, 10).fill(el.fill);
+      else if (el.type === 'bar')
+        n.box
+          .roundRect(box.x, box.y, box.w, box.h, Math.min(8, box.h / 2))
+          .fill(el.track)
+          .roundRect(box.x, box.y, box.w * (box.fill ?? 0), box.h, Math.min(8, box.h / 2))
+          .fill(el.fill)
+          .roundRect(box.x, box.y, box.w, box.h, Math.min(8, box.h / 2))
+          .stroke({ color: '#15131c', width: 2 });
     }
     for (const [id, n] of this.uiNodes)
       if (!seen.has(id)) {

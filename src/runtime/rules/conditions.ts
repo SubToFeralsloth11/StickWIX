@@ -1,6 +1,6 @@
 import type { CompareOp, Condition, Rule } from '../../model/schema';
 import type { Scalar } from '../values';
-import { evalNum, evalOperand, readValue, resolveTarget, type Binding, type RuleHost } from './host';
+import { centerOf, evalNum, evalOperand, placePoint, readValue, resolveTarget, type Binding, type RuleHost } from './host';
 
 export function compare(a: Scalar, op: CompareOp, b: Scalar): boolean {
   if (typeof a === 'number' && typeof b === 'number') {
@@ -22,7 +22,12 @@ export function compare(a: Scalar, op: CompareOp, b: Scalar): boolean {
   return Number.isFinite(na) && Number.isFinite(nb) && compare(na, op, nb);
 }
 
+/** A condition, flipped when it says NOT. */
 export function checkCondition(c: Condition, b: Binding, host: RuleHost): boolean {
+  return test(c, b, host) !== !!c.not;
+}
+
+function test(c: Condition, b: Binding, host: RuleHost): boolean {
   switch (c.type) {
     case 'compare': {
       if ('unset' in c.value) return false;
@@ -47,6 +52,49 @@ export function checkCondition(c: Condition, b: Binding, host: RuleHost): boolea
       const p = evalNum(c.percent, b, host);
       return p !== null && host.rng() * 100 < p;
     }
+    case 'numCompare': {
+      const x = evalNum(c.a, b, host);
+      const y = evalNum(c.b, b, host);
+      return x !== null && y !== null && compare(x, c.op, y);
+    }
+    case 'mouseDown':
+      return host.input.buttons.held.has(c.button);
+    case 'mouseOver': {
+      const m = host.world.mouseWorld();
+      return resolveTarget(c.target, b, host).some((i) => !i.hidden && m.x >= i.x && m.y >= i.y && m.x < i.x + i.w && m.y < i.y + i.h);
+    }
+    case 'onGround':
+      return resolveTarget(c.target, b, host).some((i) => i.grounded);
+    case 'visible':
+      return resolveTarget(c.target, b, host).some((i) => !i.hidden);
+    case 'exists':
+      return resolveTarget(c.target, b, host).length > 0;
+    case 'distance': {
+      const n = evalNum(c.amount, b, host);
+      const as = resolveTarget(c.a, b, host);
+      const bs = resolveTarget(c.b, b, host);
+      if (n === null) return false;
+      let best = Infinity;
+      for (const x of as)
+        for (const y of bs) {
+          if (x === y) continue;
+          const p = centerOf(x);
+          const q = centerOf(y);
+          best = Math.min(best, Math.hypot(q.x - p.x, q.y - p.y));
+        }
+      return best !== Infinity && compare(best, c.op, n);
+    }
+    case 'playing': {
+      if (typeof c.anim !== 'string') return false;
+      const name = c.anim.trim().toLowerCase();
+      return resolveTarget(c.target, b, host).some((i) => !!i.anim && !i.anim.done && i.anim.name?.toLowerCase() === name);
+    }
+    case 'tileAt': {
+      const pt = placePoint(c.place, b, host);
+      return !!pt && (host.world.tileAtPoint(pt.x, pt.y) >= 0) === c.solid;
+    }
+    case 'cursorLocked':
+      return host.pointerLocked();
   }
 }
 

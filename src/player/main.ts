@@ -6,7 +6,7 @@ import { bootPlayer } from './player';
 void bootPlayer(document, {
   createRenderer: (parent, o) => PixiRenderer.create(parent, o),
   // `<game>.html?fps` shows the frame-rate overlay (SC-004).
-  onStart: (stage) => {
-    if (fpsRequested()) attachFpsOverlay(stage);
+  onStart: (stage, game) => {
+    if (fpsRequested() || game.project.settings.showFps) attachFpsOverlay(stage);
   },
 });

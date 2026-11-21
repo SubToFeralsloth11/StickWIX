@@ -19,6 +19,10 @@ export interface WorldOptions {
   frameCount: (assetId: string) => number;
   /** Mouse in scene coordinates. */
   mouseWorld: () => { x: number; y: number };
+  burst?: (x: number, y: number, color: string, count: number) => void;
+  cursorHint?: (hint: 'pointer' | 'none') => void;
+  /** Whether anything listens for "stops touching" (skips the end-of-contact pass otherwise). */
+  wantsUntouch?: () => boolean;
   cap?: number;
 }
 
@@ -46,7 +50,7 @@ export class World implements WorldApi {
       .map((k) => k.id);
     const layer = o.scene.tileLayer;
     const ts = o.project.tileSets.find((t) => t.id === layer.tileSetId);
-    this.tiles = ts ? new TileGrid(layer.cellSize, layer.cells, ts.solid, ts.oneWay) : null;
+    this.tiles = ts ? new TileGrid(layer.cellSize, layer.cells, ts.solid, ts.oneWay, ts.count) : null;
   }
 
   get scene() {
@@ -67,6 +71,7 @@ export class World implements WorldApi {
       inst.w *= obj.scaleX;
       inst.h *= obj.scaleY;
       inst.hit = { x: inst.hit.x * obj.scaleX, y: inst.hit.y * obj.scaleY, w: inst.hit.w * obj.scaleX, h: inst.hit.h * obj.scaleY };
+      inst.base = { w: inst.w, h: inst.h, hit: { ...inst.hit } };
       fresh.push(inst);
     }
     for (const i of fresh) this.initStickers(i, ctx);
@@ -93,9 +98,23 @@ export class World implements WorldApi {
         .map((s) => ({ id: s.id, type: s.type, settings: s.settings, state: {} })),
       body: false, dead: false, invincible: 0, alpha: 1, pop: 1, projectile: false, firedBy: null, bounce: 0, stun: 0,
       blocked: { left: false, right: false, up: false, down: false }, solid: 'none', dragged: false,
+      still: kind.autoPlay ? null : 0, base: { w: kind.size.w, h: kind.size.h, hit: { ...hb } }, opacity: kind.opacity,
+      tint: kind.tint, ignoreMouse: kind.ignoreMouse, glide: null, say: null, crack: 0, bar: null,
     };
     this.instances.set(id, inst);
+    if (kind.startAnim) this.playAnim(inst, kind.startAnim);
     return inst;
+  }
+
+  /** Starts a named animation of the instance's Kind; one already playing keeps going. */
+  playAnim(inst: Instance, name: string): boolean {
+    const n = name.trim().toLowerCase();
+    const a = this.kinds.get(inst.kindId)?.animations.find((x) => x.name.toLowerCase() === n);
+    if (!a) return false;
+    if (inst.anim?.name === a.name && !inst.anim.done) return true;
+    inst.anim = { assetId: a.lookId ?? inst.lookId, fps: a.fps, loop: a.loop, t: 0, frame: 0, name: a.name };
+    inst.still = null;
+    return true;
   }
 
   private initStickers(inst: Instance, ctx: StepCtx) {
@@ -126,7 +145,7 @@ export class World implements WorldApi {
   }
 
   /** Spawns a new object at (x, y), or returns null at the object cap (FR-041). */
-  spawn(kindId: string, x: number, y: number): Instance | null {
+  spawn(kindId: string, x: number, y: number, prep?: (inst: Instance) => void): Instance | null {
     const kind = this.kinds.get(kindId);
     if (!kind || !this.ctx) return null;
     if (this.liveCount() >= this.cap) {
@@ -139,6 +158,7 @@ export class World implements WorldApi {
     const r = resolveObject(kind, { overrides: {} });
     const inst = this.make(kind, x, y, null, r.stickers, r.values, r.lookId, false);
     this.initStickers(inst, this.ctx);
+    prep?.(inst);
     this.o.emit({ type: 'created', id: inst.id });
     return inst;
   }
@@ -179,7 +199,7 @@ export class World implements WorldApi {
   topmostAt(x: number, y: number) {
     let best: Instance | undefined;
     for (const i of this.instances.values()) {
-      if (i.dead || i.hidden) continue;
+      if (i.dead || i.hidden || i.ignoreMouse) continue;
       if (x < i.x || y < i.y || x >= i.x + i.w || y >= i.y + i.h) continue;
       if (!best || i.layer >= best.layer) best = i;
     }
@@ -188,6 +208,31 @@ export class World implements WorldApi {
 
   cellSize() {
     return this.tiles?.cellSize ?? this.o.scene.tileLayer.cellSize;
+  }
+
+  sceneSize() {
+    return { w: this.o.scene.width, h: this.o.scene.height };
+  }
+
+  burst(x: number, y: number, color: string, count: number) {
+    this.o.burst?.(x, y, color, count);
+  }
+
+  cursorHint(hint: 'pointer' | 'none') {
+    this.o.cursorHint?.(hint);
+  }
+
+  /** Tile index at a scene point, or -1 for an empty cell (or no tile layer). */
+  tileAtPoint(x: number, y: number): number {
+    if (!this.tiles) return -1;
+    const c = this.tiles.cellSize;
+    return this.tiles.tileAt(Math.floor(x / c), Math.floor(y / c)) ?? -1;
+  }
+
+  setTileAtPoint(x: number, y: number, index: number) {
+    if (!this.tiles) return;
+    const c = this.tiles.cellSize;
+    this.tiles.setTile(Math.floor(x / c), Math.floor(y / c), index);
   }
 
   // ---------- Simulation ----------
@@ -203,6 +248,7 @@ export class World implements WorldApi {
         STICKERS[s.type].step?.(inst, s.settings, s.state, ctx);
       }
     }
+    this.glide(list, ctx.dt);
     this.move(list, ctx.dt);
     this.touch(ctx);
     this.animate(ctx.dt);
@@ -251,6 +297,20 @@ export class World implements WorldApi {
     }
   }
 
+  /** Rule "glide": eases objects to their target spot. */
+  private glide(list: Instance[], dt: number) {
+    for (const i of list) {
+      const g = i.glide;
+      if (!g || i.dead) continue;
+      g.t = Math.min(g.dur, g.t + dt);
+      const k = g.t / g.dur;
+      const e = k < 0.5 ? 2 * k * k : 1 - (-2 * k + 2) ** 2 / 2;
+      i.x = g.fx + (g.tx - g.fx) * e;
+      i.y = g.fy + (g.ty - g.fy) * e;
+      if (g.t >= g.dur) i.glide = null;
+    }
+  }
+
   private touch(ctx: StepCtx) {
     const live: Instance[] = [];
     for (const i of this.instances.values()) if (!i.dead && !i.hidden) live.push(i);
@@ -260,11 +320,15 @@ export class World implements WorldApi {
         STICKERS[s.type].onContact?.(self, other, s.settings, s.state, ctx);
       }
     };
-    this.contacts.update(live, (a, b) => {
-      ctx.emit({ type: 'touch', a: a.id, b: b.id });
-      react(a, b);
-      react(b, a);
-    });
+    this.contacts.update(
+      live,
+      (a, b) => {
+        ctx.emit({ type: 'touch', a: a.id, b: b.id });
+        react(a, b);
+        react(b, a);
+      },
+      this.o.wantsUntouch?.() ? (a, b) => ctx.emit({ type: 'untouch', a: a.id, b: b.id }) : undefined,
+    );
   }
 
   private animate(dt: number) {
@@ -275,6 +339,10 @@ export class World implements WorldApi {
       const n = this.o.frameCount(a.assetId);
       const f = Math.floor(a.t * a.fps);
       a.frame = a.loop ? f % n : Math.min(n - 1, f);
+      if (!a.loop && !a.done && f >= n) {
+        a.done = true;
+        this.o.emit({ type: 'animEnd', id: i.id });
+      }
     }
   }
 

@@ -14,6 +14,7 @@ export type AssetUser =
   | { type: 'background'; sceneId: string; label: string }
   | { type: 'tileSet'; tileSetId: string; label: string }
   | { type: 'music'; label: string }
+  | { type: 'setting'; label: string }
   | { type: 'rule'; rule: LocatedRule };
 
 const words = (s: string) => s.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase();
@@ -31,6 +32,7 @@ export function assetUsers(p: Project, assetId: string): AssetUser[] {
   const stickerLabel = (owner: string, s: Sticker, fields: string[]) => `${owner}: ${words(s.type)} sticker (${fields.join(', ')})`;
   for (const k of p.kinds) {
     if (k.lookId === assetId) out.push({ type: 'kind', kindId: k.id, label: k.name });
+    for (const a of k.animations) if (a.lookId === assetId) out.push({ type: 'kind', kindId: k.id, label: `${k.name}: "${a.name}" animation` });
     for (const s of k.stickers) {
       const fields = stickerFields(s.settings, assetId);
       if (fields.length) out.push({ type: 'sticker', kindId: k.id, stickerId: s.id, label: stickerLabel(k.name, s, fields) });
@@ -50,6 +52,7 @@ export function assetUsers(p: Project, assetId: string): AssetUser[] {
   }
   for (const t of p.tileSets) if (t.assetId === assetId) out.push({ type: 'tileSet', tileSetId: t.id, label: `Tile set "${t.name}"` });
   if (p.settings.backgroundMusic === assetId) out.push({ type: 'music', label: 'Background music' });
+  if (p.settings.cursorLook === assetId) out.push({ type: 'setting', label: 'Mouse pointer picture' });
   for (const rule of rulesReferencing(p, { kind: 'asset', id: assetId })) out.push({ type: 'rule', rule });
   return out;
 }

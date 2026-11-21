@@ -34,15 +34,18 @@ export default defineSticker({
     { key: 'max', kind: 'slider', label: 'Health', help: 'How many hits of 1 damage it can take.', min: 1, max: 100, step: 1 },
     { key: 'invincibleMs', kind: 'slider', label: 'Safe time after a hit', help: 'It cannot be hurt again for this long.', min: 0, max: 5000, step: 100, unit: 'ms' },
     { key: 'flash', kind: 'toggle', label: 'Flash when hurt', help: 'Blinks during the safe time.' },
+    { key: 'showBar', kind: 'toggle', label: 'Health bar', help: 'Shows a little health bar above it.' },
   ],
   events: [
     { id: 'hurt', phrase: 'is hurt' },
     { id: 'outOfHealth', phrase: 'runs out of health' },
   ],
-  init(_inst, s, state) {
+  init(inst, s, state) {
     state.hp = s.max;
+    inst.bar = s.showBar ? { v: s.max, max: s.max } : null;
   },
-  step(inst, s, _state, ctx) {
+  step(inst, s, state, ctx) {
+    if (s.showBar) inst.bar = { v: Math.max(0, state.hp as number), max: s.max };
     if (inst.invincible > 0) {
       inst.invincible = Math.max(0, inst.invincible - ctx.dt);
       inst.alpha = s.flash && inst.invincible > 0 && Math.floor(inst.invincible * 12) % 2 === 0 ? 0.3 : 1;

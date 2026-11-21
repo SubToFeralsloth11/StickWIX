@@ -8,6 +8,7 @@ import { game } from '../../../fixtures/build';
 const FR011 = [
   'platformer', 'topdown', 'solid', 'falls', 'bouncy', 'collectible', 'hurts', 'health',
   'patrol', 'chase', 'shooter', 'clickable', 'draggable', 'cameraFollow', 'animate',
+  'breakable', 'followMouse', 'wander', 'spin', 'lifetime', 'pointAt', 'wrap', 'stayInScene', 'float', 'spawner', 'animator',
 ] as const;
 
 /** Events each sticker exposes to rules (contracts/sticker-module.md). */
@@ -18,10 +19,12 @@ const EVENTS: Record<string, string[]> = {
   health: ['hurt', 'outOfHealth'],
   shooter: ['shoots'],
   draggable: ['dropped'],
+  breakable: ['broken'],
+  spawner: ['spawns'],
 };
 
 describe('sticker registry', () => {
-  it('registers exactly the 15 FR-011 stickers, in order', () => {
+  it('registers every sticker, in order', () => {
     expect(Object.keys(STICKERS)).toEqual([...FR011]);
     expect(STICKER_TYPES).toEqual([...FR011]);
     for (const t of FR011) expect(STICKERS[t].type).toBe(t);

@@ -3,6 +3,10 @@ export interface AudioAdapter {
   play(assetId: string): void;
   music(assetId: string | null): void;
   stop(): void;
+  /** Master volume, 1 = normal. */
+  volume?(v: number): void;
+  /** Cuts every sound effect playing now (music keeps going). */
+  stopSounds?(): void;
 }
 
 export const silentAudio: AudioAdapter = { play() {}, music() {}, stop() {} };
@@ -19,6 +23,9 @@ export class WebAudio implements AudioAdapter {
   private musicId: string | null = null;
   private sfxGain: GainNode | null = null;
   private musicGain: GainNode | null = null;
+  private master: GainNode | null = null;
+  private level = 1;
+  private playing = new Set<AudioBufferSourceNode>();
   private stopped = false;
 
   /** `urlFor` maps an asset id to a fetchable URL (blob:, data: or builtin path). */
@@ -29,13 +36,26 @@ export class WebAudio implements AudioAdapter {
     // Every target browser (Safari 14.1+ included) ships the unprefixed AudioContext.
     if (typeof AudioContext === 'undefined') return null;
     this.ctx = new AudioContext();
+    this.master = this.ctx.createGain();
+    this.master.gain.value = this.level;
+    this.master.connect(this.ctx.destination);
     this.sfxGain = this.ctx.createGain();
     this.sfxGain.gain.value = 0.7;
-    this.sfxGain.connect(this.ctx.destination);
+    this.sfxGain.connect(this.master);
     this.musicGain = this.ctx.createGain();
     this.musicGain.gain.value = 0.35;
-    this.musicGain.connect(this.ctx.destination);
+    this.musicGain.connect(this.master);
     return this.ctx;
+  }
+
+  volume(v: number) {
+    this.level = v;
+    if (this.master) this.master.gain.value = v;
+  }
+
+  stopSounds() {
+    for (const s of this.playing) s.stop();
+    this.playing.clear();
   }
 
   unlock() {
@@ -71,6 +91,8 @@ export class WebAudio implements AudioAdapter {
       const src = ctx.createBufferSource();
       src.buffer = buf;
       src.connect(this.sfxGain);
+      src.onended = () => this.playing.delete(src);
+      this.playing.add(src);
       src.start();
     });
   }

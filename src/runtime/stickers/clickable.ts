@@ -9,6 +9,7 @@ export default defineSticker({
   fields: [
     { key: 'hoverGrow', kind: 'toggle', label: 'Grow under the mouse', help: 'Gets slightly bigger when the mouse is over it.' },
     { key: 'sound', kind: 'sound', label: 'Click sound', help: 'Plays when it is clicked.' },
+    { key: 'pointer', kind: 'toggle', label: 'Hand pointer', help: 'The mouse pointer becomes a pointing hand over it.' },
   ],
   step(inst, s, _state, ctx) {
     const m = ctx.world.mouseWorld();
@@ -16,5 +17,6 @@ export default defineSticker({
     const target = s.hoverGrow && over ? (ctx.input.mouse.down ? 0.95 : 1.08) : 1;
     inst.pop += (target - inst.pop) * 0.3;
     if (over && ctx.input.mouse.pressed) ctx.world.playSound(s.sound);
+    if (over && s.pointer) ctx.world.cursorHint('pointer');
   },
 });

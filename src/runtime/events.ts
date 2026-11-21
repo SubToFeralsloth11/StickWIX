@@ -26,6 +26,23 @@ function keyOf(e: RuntimeEvent): string {
       return `${e.type}|${e.id}`;
     case 'sceneStart':
       return 'sceneStart';
+    case 'holding':
+      return `holding|${e.id}|${e.button}`;
+    case 'mouse':
+      return `mouse|${e.button}|${e.mode}`;
+    case 'wheel':
+      return `wheel|${e.direction}`;
+    case 'hover':
+      return `hover|${e.id}|${e.mode}`;
+    case 'letGo':
+    case 'animEnd':
+      return `${e.type}|${e.id}`;
+    case 'frame':
+      return 'frame';
+    case 'message':
+      return `message|${e.name.toLowerCase()}`;
+    case 'untouch':
+      return e.a < e.b ? `untouch|${e.a}|${e.b}` : `untouch|${e.b}|${e.a}`;
   }
 }
 
@@ -43,7 +60,9 @@ export class RecentEvents {
   }
 
   record(event: RuntimeEvent, t: number) {
-    if (event.type === 'key' && event.mode === 'held') return; // fires every step; "pressed" covers it
+    // Fire every step; "pressed" covers them.
+    if ((event.type === 'key' || event.type === 'mouse') && event.mode === 'held') return;
+    if (event.type === 'frame') return;
     const k = keyOf(event);
     this.items.delete(k);
     this.items.set(k, { t, event });

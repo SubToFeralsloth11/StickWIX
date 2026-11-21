@@ -1,13 +1,34 @@
 import type { Box, Instance } from './types';
 
-/** Solid lookup for the scene's tile layer. */
+/** Solid lookup for the scene's tile layer. Rules can place and remove tiles, so it keeps its own copy of the cells. */
 export class TileGrid {
+  readonly cells: Record<string, number>;
+  /** Goes up on every change, so renderers know to redraw. */
+  version = 0;
+
   constructor(
     readonly cellSize: number,
-    private readonly cells: Record<string, number>,
+    cells: Record<string, number>,
     private readonly solid: readonly boolean[],
     private readonly oneWay: readonly boolean[],
-  ) {}
+    /** Number of tiles in the set (valid indices are 0..count-1). */
+    readonly count = Infinity,
+  ) {
+    this.cells = { ...cells };
+  }
+
+  /** Puts tile `index` in a cell; a negative index empties it. */
+  setTile(cx: number, cy: number, index: number) {
+    const k = `${cx},${cy}`;
+    if (index < 0 || index >= this.count) {
+      if (!(k in this.cells)) return;
+      delete this.cells[k];
+    } else {
+      if (this.cells[k] === index) return;
+      this.cells[k] = index;
+    }
+    this.version++;
+  }
 
   tileAt(cx: number, cy: number): number | undefined {
     return this.cells[`${cx},${cy}`];
@@ -169,7 +190,7 @@ export class Contacts {
   /** Broad phase: cell → indices into this step's instance list. */
   private cells = new Map<number, number[]>();
 
-  update(insts: Instance[], onStart: (a: Instance, b: Instance) => void) {
+  update(insts: Instance[], onStart: (a: Instance, b: Instance) => void, onEnd?: (a: Instance, b: Instance) => void) {
     const size = 128;
     const boxes = insts.map(hitbox);
     this.cells.clear();
@@ -198,6 +219,9 @@ export class Contacts {
     this.current = next;
     for (const [a, set] of next)
       for (const b of set) if (!prev.get(a)?.has(b) && !prev.get(b)?.has(a)) onStart(a, b);
+    if (onEnd)
+      for (const [a, set] of prev)
+        for (const b of set) if (!next.get(a)?.has(b) && !next.get(b)?.has(a)) onEnd(a, b);
   }
 
   touching(a: Instance, b: Instance) {

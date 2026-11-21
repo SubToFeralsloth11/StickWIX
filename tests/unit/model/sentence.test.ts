@@ -68,7 +68,7 @@ describe('sentence rendering (contracts/rule-grammar.md)', () => {
     expect(a({ type: 'hide', target: obj('h') })).toBe('Hero hides.');
     expect(a({ type: 'changeLook', target: obj('h'), assetId: 'builtin:img/hero_jump' })).toBe('Hero looks like Hero jump.');
     expect(a({ type: 'animate', target: obj('h'), assetId: 'builtin:img/hero_walk', fps: lit(8), loop: true })).toBe(
-      'Hero plays animation Hero walk at 8 fps looping.',
+      'Hero plays the frames of Hero walk at 8 fps looping.',
     );
     expect(a({ type: 'changeValue', value: { valueId: 'score' }, op: 'set', amount: lit(0) })).toBe('Score becomes 0.');
     expect(a({ type: 'changeValue', value: { valueId: 'hp', of: that('enemy') }, op: 'subtract', amount: lit(1) })).toBe(

@@ -31,7 +31,7 @@ const PIXI_STUBS = [
 ];
 
 /**
- * Keeps PixiJS within the 600 KB player budget (T113) by dropping features
+ * Keeps PixiJS within the 700 KB player budget (T113) by dropping features
  * the game renderer never uses; the editor build is unaffected.
  * - The runtime reads input from the DOM itself and uses no filters,
  *   accessibility or spritesheets, so those registrations become empty.

@@ -15,6 +15,17 @@ import clickable from './clickable';
 import draggable from './draggable';
 import cameraFollow from './camera-follow';
 import animate from './animate';
+import breakable from './breakable';
+import followMouse from './follow-mouse';
+import wander from './wander';
+import spin from './spin';
+import lifetime from './lifetime';
+import pointAt from './point-at';
+import wrap from './wrap';
+import stayInScene from './stay-in-scene';
+import float from './float';
+import spawner from './spawner';
+import animator from './animator';
 
 /** Every sticker, in the order the editor lists them (FR-011). */
 export const STICKERS: Record<StickerType, StickerModule> = {
@@ -33,6 +44,17 @@ export const STICKERS: Record<StickerType, StickerModule> = {
   draggable,
   cameraFollow,
   animate,
+  breakable,
+  followMouse,
+  wander,
+  spin,
+  lifetime,
+  pointAt,
+  wrap,
+  stayInScene,
+  float,
+  spawner,
+  animator,
 };
 
 /**

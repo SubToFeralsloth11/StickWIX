@@ -79,7 +79,7 @@ export function boundKinds(trigger: Trigger): Set<string> {
     if (t.t === 'any' || t.t === 'that') out.add(t.kindId);
   };
   if ('target' in trigger) add(trigger.target);
-  if (trigger.type === 'touches') {
+  if (trigger.type === 'touches' || trigger.type === 'stopsTouching') {
     add(trigger.a);
     add(trigger.b);
   }
@@ -99,7 +99,7 @@ export function ruleBlanks(rule: Rule, ids: Record<RefKind, Set<string>>, object
   }
   // "that [Kind]" outside the trigger needs the trigger to bind that Kind.
   const bound = boundKinds(rule.trigger);
-  if (rule.trigger.type === 'touches' && objectKinds) {
+  if ((rule.trigger.type === 'touches' || rule.trigger.type === 'stopsTouching') && objectKinds) {
     for (const t of [rule.trigger.a, rule.trigger.b]) if (t.t === 'object') {
       const k = objectKinds.get(t.id);
       if (k) bound.add(k);

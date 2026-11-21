@@ -86,7 +86,7 @@ describe('camera', () => {
     g.input.keyDown('ArrowRight');
     g.run(60);
     expect([g.scene.camera.x, g.scene.camera.y]).toEqual([0, 0]);
-    expect(g.view().camera).toEqual({ x: 0, y: 0, offset: { x: 0, y: 0 } });
+    expect(g.view().camera).toEqual({ x: 0, y: 0, zoom: 1, offset: { x: 0, y: 0 } });
   });
 
   it('shakes with a decaying offset, then settles without moving the camera', () => {

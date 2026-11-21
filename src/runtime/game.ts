@@ -1,4 +1,4 @@
-import type { Project } from '../model/schema';
+import type { CursorStyle, Project } from '../model/schema';
 import { silentAudio, type AudioAdapter } from './audio';
 import { RecentEvents, type RecentEvent } from './events';
 import { Input } from './input';
@@ -21,6 +21,14 @@ export interface GameOptions {
   onDiagnostic?: (d: Diagnostic) => void;
   /** Sends a "share" action's message out of the game; returns false when nothing could take it, so the game shows it instead. */
   share?: (text: string) => boolean;
+  /** Browser powers rules can ask for (pointer lock, full screen). */
+  platform?: Platform;
+}
+
+export interface Platform {
+  lockPointer(lock: boolean): void;
+  pointerLocked(): boolean;
+  fullscreen(mode: 'on' | 'off' | 'toggle'): void;
 }
 
 /**
@@ -39,7 +47,16 @@ export class Game {
   readonly assetInfo: AssetInfo;
   readonly screen: { w: number; h: number };
   readonly share: ((text: string) => boolean) | undefined;
+  readonly platform: Platform | undefined;
   readonly dt = STEP;
+  /** Mouse pointer chosen by settings and rules. */
+  cursor: { style: CursorStyle; look: string | null; size: number };
+  /** Per-step pointer wish from stickers (hand over Clickables, hidden for Follow Mouse); cleared every step. */
+  cursorHint: 'pointer' | 'none' | null = null;
+  /** Game speed multiplier (slow motion). */
+  timeScale = 1;
+  /** Paused with the pause key. */
+  paused = false;
   scene: SceneRuntime;
   totalTime = 0;
   frozen = false;
@@ -57,6 +74,10 @@ export class Game {
     this.renderer = opts.renderer;
     this.assetInfo = opts.assetInfo ?? (() => undefined);
     this.share = opts.share;
+    this.platform = opts.platform;
+    const st = this.project.settings;
+    this.cursor = { style: st.cursor, look: st.cursorLook, size: st.cursorSize };
+    this.audio.volume?.(st.volume);
     this.screen = { w: this.project.settings.screenWidth, h: this.project.settings.screenHeight };
     this.values = new Values(this.project, (e) => this.emit(e), opts.remember ?? null);
     this.loop = new FixedLoop(() => this.step());
@@ -91,7 +112,15 @@ export class Game {
 
   /** One fixed simulation step. */
   step() {
+    const pauseKey = this.project.settings.pauseKey;
+    if (pauseKey && this.input.state.pressed.has(pauseKey)) this.paused = !this.paused;
+    if (this.paused) {
+      this.input.endStep();
+      return;
+    }
     this.totalTime += this.dt;
+    this.cursorHint = null;
+    this.input.bounds = this.screen;
     this.scene.step();
     this.input.endStep();
     if (this.scene.pending !== undefined) this.switchScene(this.scene.pending ?? this.scene.scene.id);
@@ -121,13 +150,30 @@ export class Game {
       scene: s.scene,
       tileSet: this.project.tileSets.find((t) => t.id === s.scene.tileLayer.tileSetId),
       screen: this.screen,
-      camera: { x: s.camera.x, y: s.camera.y, offset: s.camera.offset },
+      camera: { x: s.camera.x, y: s.camera.y, zoom: s.camera.zoom, offset: s.camera.offset },
       time: s.time,
       instances: s.world.all(),
-      ui: s.ui.boxes(this.screen, (t) => this.values.format(t), (id) => this.assetInfo(id)),
+      ui: s.ui.boxes(this.screen, (t) => this.values.format(t), (id) => this.assetInfo(id), (name) => {
+        const def = this.values.byName(name);
+        const v = def ? this.values.game.get(def.id) : undefined;
+        return typeof v === 'number' ? v : undefined;
+      }),
       texts: s.texts,
       frozen: this.frozen,
+      paused: this.paused,
+      tiles: s.world.tiles ? { cells: s.world.tiles.cells, version: s.world.tiles.version } : null,
+      particles: s.particles,
+      flash: s.flashFx ? { color: s.flashFx.color, alpha: Math.max(0, (s.flashFx.until - s.time) / s.flashFx.dur) } : null,
+      cursor: this.cursorView(),
     };
+  }
+
+  /** What to draw for the pointer: a CSS cursor name, or a picture at the mouse. */
+  cursorView(): GameView['cursor'] {
+    const c = this.cursor;
+    const css = this.cursorHint === 'none' ? 'none' : c.style === 'look' ? 'none' : this.cursorHint === 'pointer' && c.style === 'default' ? 'pointer' : c.style;
+    const m = this.input.state.mouse;
+    return { css, look: this.cursorHint !== 'none' && c.style === 'look' ? c.look : null, size: c.size, x: m.x, y: m.y };
   }
 
   render() {

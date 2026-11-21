@@ -8,11 +8,14 @@ export interface FollowSettings {
 
 /**
  * Scene camera. Without a Camera Follow target it stays at the scene's
- * top-left. Position is the top-left of the visible screen in scene pixels.
+ * top-left. Position is the top-left of the visible area in scene pixels;
+ * with zoom the visible area is the screen size divided by the zoom.
  */
 export class Camera {
   x = 0;
   y = 0;
+  /** 1 = 100%; bigger zooms in. */
+  zoom = 1;
   private shakeLeft = 0;
   private shakeTotal = 0;
   /** Offset applied when drawing (shake); not part of the camera position. */
@@ -23,18 +26,30 @@ export class Camera {
     private readonly scene: { w: number; h: number },
   ) {}
 
+  /** Visible width/height in scene pixels. */
+  get viewW() {
+    return this.screen.w / this.zoom;
+  }
+  get viewH() {
+    return this.screen.h / this.zoom;
+  }
+
   /** Jumps straight to the target (scene start). */
   snap(target: Instance | null, s: FollowSettings | null) {
     if (!target || !s) return;
-    this.x = target.x + target.w / 2 - this.screen.w / 2;
-    this.y = target.y + target.h / 2 - this.screen.h / 2;
+    this.centerOn(target.x + target.w / 2, target.y + target.h / 2);
     if (s.clampToScene) this.clamp();
+  }
+
+  centerOn(x: number, y: number) {
+    this.x = x - this.viewW / 2;
+    this.y = y - this.viewH / 2;
   }
 
   update(target: Instance | null, s: FollowSettings | null, dt: number, rng: () => number) {
     if (target && s) {
-      const cx = target.x + target.w / 2 - this.screen.w / 2;
-      const cy = target.y + target.h / 2 - this.screen.h / 2;
+      const cx = target.x + target.w / 2 - this.viewW / 2;
+      const cy = target.y + target.h / 2 - this.viewH / 2;
       let gx = this.x;
       let gy = this.y;
       if (cx - this.x > s.deadzone) gx = cx - s.deadzone;
@@ -60,7 +75,7 @@ export class Camera {
   }
 
   private clamp() {
-    this.x = Math.min(Math.max(0, this.x), Math.max(0, this.scene.w - this.screen.w));
-    this.y = Math.min(Math.max(0, this.y), Math.max(0, this.scene.h - this.screen.h));
+    this.x = Math.min(Math.max(0, this.x), Math.max(0, this.scene.w - this.viewW));
+    this.y = Math.min(Math.max(0, this.y), Math.max(0, this.scene.h - this.viewH));
   }
 }

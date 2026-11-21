@@ -1,4 +1,4 @@
-import type { Sticker, StickerEvent } from '../model/schema';
+import type { MouseButton, Sticker, StickerEvent } from '../model/schema';
 import type { StickerType } from '../model/sticker-settings';
 
 export interface Box {
@@ -26,7 +26,25 @@ export interface Instance {
   layer: number;
   hidden: boolean;
   lookId: string | null;
-  anim: { assetId: string | null; fps: number; loop: boolean; t: number; frame: number } | null;
+  /** Playing animation; `name` is set for a Kind's named animation; `done` once a non-looping one ended. */
+  anim: { assetId: string | null; fps: number; loop: boolean; t: number; frame: number; name?: string; done?: boolean } | null;
+  /** With no animation playing: show this frame instead of flipping through frames on their own. */
+  still: number | null;
+  /** Size of the Kind (before any resize), so "size %" is relative to it. */
+  base: { w: number; h: number; hit: Box };
+  /** Base see-through (Kind opacity / rules), multiplied with `alpha`. */
+  opacity: number;
+  tint: string | null;
+  /** Clicks and hovering pass through it. */
+  ignoreMouse: boolean;
+  /** Rule "glide": slides from (fx, fy) to (tx, ty) over `dur` seconds. */
+  glide: { fx: number; fy: number; tx: number; ty: number; t: number; dur: number } | null;
+  /** Speech bubble ("say"). `until` is scene time. */
+  say: { text: string; until: number } | null;
+  /** Breaking progress 0..1 (Breakable), drawn as cracks. */
+  crack: number;
+  /** Health bar above the object, when shown. */
+  bar: { v: number; max: number } | null;
   grounded: boolean;
   /** -1 left, 1 right; last horizontal direction faced. */
   facing: number;
@@ -71,13 +89,22 @@ export type RuntimeEvent =
   | { type: 'sceneStart' }
   | { type: 'timer'; ruleId: string; seconds: number }
   | { type: 'key'; key: string; mode: 'pressed' | 'held' | 'released' }
-  | { type: 'clicked'; id: string; ui?: boolean }
+  | { type: 'clicked'; id: string; ui?: boolean; button?: 'right' }
   | { type: 'touch'; a: string; b: string }
   | { type: 'valueChanged'; valueId: string; objectId?: string; from: unknown; to: unknown }
   | { type: 'created'; id: string }
   | { type: 'destroyed'; id: string }
   | { type: 'leavesScene'; id: string }
-  | { type: 'sticker'; id: string; event: StickerEvent };
+  | { type: 'sticker'; id: string; event: StickerEvent }
+  | { type: 'holding'; id: string; button: 'left' | 'right'; from: number; to: number }
+  | { type: 'mouse'; button: MouseButton; mode: 'pressed' | 'held' | 'released' }
+  | { type: 'wheel'; direction: 'up' | 'down' }
+  | { type: 'hover'; id: string; mode: 'enter' | 'leave' }
+  | { type: 'letGo'; id: string }
+  | { type: 'frame' }
+  | { type: 'message'; name: string }
+  | { type: 'untouch'; a: string; b: string }
+  | { type: 'animEnd'; id: string };
 
 export type Diagnostic =
   | { type: 'runaway'; ruleId: string }
@@ -90,14 +117,21 @@ export interface InputState {
   /** Went down / up since the previous step. */
   pressed: Set<string>;
   released: Set<string>;
+  /** Left button in down/pressed/released; every button in the sets below. */
   mouse: { x: number; y: number; down: boolean; pressed: boolean; released: boolean };
+  buttons: { held: Set<MouseButton>; pressed: Set<MouseButton>; released: Set<MouseButton> };
+  /** Wheel notches this step (up positive). */
+  wheel: number;
+  /** Mouse movement this step in game pixels (works while the pointer is locked). */
+  move: { x: number; y: number };
 }
 
 export interface WorldApi {
   all(): Iterable<Instance>;
   get(id: string): Instance | undefined;
   byKind(kindId: string): Instance[];
-  spawn(kindId: string, x: number, y: number): Instance | null;
+  /** `prep` runs before "is created" fires (copies, projectiles). */
+  spawn(kindId: string, x: number, y: number, prep?: (inst: Instance) => void): Instance | null;
   destroy(inst: Instance): void;
   /** Solid at a world point (tiles or Solid objects). */
   solidAt(x: number, y: number, ignore?: Instance): boolean;
@@ -111,6 +145,13 @@ export interface WorldApi {
   topmostAt(x: number, y: number): Instance | undefined;
   /** Tile grid cell size (snap size for Draggable). */
   cellSize(): number;
+  sceneSize(): { w: number; h: number };
+  /** Throws little sparks out of a scene point. */
+  burst(x: number, y: number, color: string, count: number): void;
+  /** Wants the pointer drawn as a hand / hidden this step (Clickable, Follow Mouse). */
+  cursorHint(hint: 'pointer' | 'none'): void;
+  /** Named animation of the instance's Kind (case-insensitive); false when it has none by that name. */
+  playAnim(inst: Instance, name: string): boolean;
 }
 
 export interface StepCtx {
@@ -142,6 +183,7 @@ export type SettingField =
   | { key: string; kind: 'kind'; label: string; help: string; emptyLabel: string }
   | { key: string; kind: 'look'; label: string; help: string }
   | { key: string; kind: 'sound'; label: string; help: string }
-  | { key: string; kind: 'key'; label: string; help: string };
+  | { key: string; kind: 'key'; label: string; help: string }
+  | { key: string; kind: 'anim'; label: string; help: string };
 
 export type { Sticker };

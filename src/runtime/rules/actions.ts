@@ -1,20 +1,9 @@
-import type { Action, Place } from '../../model/schema';
+import type { Action } from '../../model/schema';
 import type { Instance } from '../types';
-import { evalNum, evalOperand, resolveTarget, valueOwner, type Binding, type RuleHost } from './host';
+import { centerOf, evalNum, evalOperand, placeAt, placePoint, propOf, resolveTarget, setPropOf, valueOwner, type Binding, type RuleHost } from './host';
 
 /** Strength 1 = 100 px/s of push. */
 const PUSH_UNIT = 100;
-
-/** Where a Place blank points, as the top-left for an object of size w×h. */
-function placeAt(p: Place, w: number, h: number, b: Binding, host: RuleHost): { x: number; y: number } | null {
-  if ('at' in p) {
-    const x = evalNum(p.at.x, b, host);
-    const y = evalNum(p.at.y, b, host);
-    return x === null || y === null ? null : { x, y };
-  }
-  const t = resolveTarget(p.atTarget, b, host)[0];
-  return t ? { x: t.x + t.w / 2 - w / 2, y: t.y + t.h / 2 - h / 2 } : null;
-}
 
 function targets(a: { target: Parameters<typeof resolveTarget>[0] }, b: Binding, host: RuleHost): Instance[] {
   return resolveTarget(a.target, b, host);
@@ -106,7 +95,9 @@ export function runAction(a: Action, b: Binding, host: RuleHost): number | null 
       if (typeof a.assetId !== 'string' || fps === null || fps <= 0) return null;
       for (const i of targets(a, b, host)) {
         i.lookId = a.assetId;
+        if (i.anim?.assetId === a.assetId && !i.anim.done && i.anim.fps === fps) continue; // already playing: don't restart every frame
         i.anim = { assetId: a.assetId, fps, loop: a.loop, t: 0, frame: 0 };
+        i.still = null;
       }
       return null;
     }
@@ -151,5 +142,176 @@ export function runAction(a: Action, b: Binding, host: RuleHost): number | null 
     case 'share':
       host.share(host.values.format(a.text));
       return null;
+    case 'playAnim':
+      if (typeof a.anim !== 'string') return null;
+      for (const i of targets(a, b, host)) host.world.playAnim(i, a.anim);
+      return null;
+    case 'stopAnim':
+      for (const i of targets(a, b, host)) {
+        i.still = i.anim ? i.anim.frame : (i.still ?? 0);
+        i.anim = null;
+      }
+      return null;
+    case 'setFrame': {
+      const f = evalNum(a.frame, b, host);
+      if (f !== null) for (const i of targets(a, b, host)) setPropOf(i, 'frame', f);
+      return null;
+    }
+    case 'setProp': {
+      const n = evalNum(a.amount, b, host);
+      if (n === null) return null;
+      for (const i of targets(a, b, host)) {
+        const cur = propOf(i, a.p, host);
+        setPropOf(i, a.p, a.op === 'set' ? n : a.op === 'add' ? cur + n : cur - n);
+      }
+      return null;
+    }
+    case 'turn': {
+      const d = evalNum(a.degrees, b, host);
+      if (d !== null) for (const i of targets(a, b, host)) setPropOf(i, 'rotation', i.rotation + d);
+      return null;
+    }
+    case 'pointTowards':
+      for (const i of targets(a, b, host)) {
+        const p = placePoint(a.to, b, host);
+        const c = centerOf(i);
+        if (p && (p.x !== c.x || p.y !== c.y)) setPropOf(i, 'rotation', (Math.atan2(p.y - c.y, p.x - c.x) * 180) / Math.PI);
+      }
+      return null;
+    case 'face':
+      for (const i of targets(a, b, host)) i.facing = a.dir === 'flip' ? -i.facing : a.dir === 'left' ? -1 : 1;
+      return null;
+    case 'tint':
+      for (const i of targets(a, b, host)) i.tint = a.color;
+      return null;
+    case 'glide': {
+      const s = evalNum(a.seconds, b, host);
+      if (s === null) return null;
+      for (const i of targets(a, b, host)) {
+        const p = placeAt(a.to, i.w, i.h, b, host);
+        if (!p) continue;
+        if (s <= 0) {
+          i.x = p.x;
+          i.y = p.y;
+          i.glide = null;
+        } else i.glide = { fx: i.x, fy: i.y, tx: p.x, ty: p.y, t: 0, dur: s };
+      }
+      return null;
+    }
+    case 'headTowards': {
+      const v = evalNum(a.speed, b, host);
+      if (v === null) return null;
+      for (const i of targets(a, b, host)) {
+        const p = placePoint(a.to, b, host);
+        if (!p) continue;
+        const c = centerOf(i);
+        const d = Math.hypot(p.x - c.x, p.y - c.y);
+        if (d < 1e-6) continue;
+        i.vx = ((p.x - c.x) / d) * v;
+        i.vy = ((p.y - c.y) / d) * v;
+        i.dir = { x: (p.x - c.x) / d, y: (p.y - c.y) / d };
+        if (Math.abs(i.vx) > 1e-6) i.facing = i.vx < 0 ? -1 : 1;
+        i.body ||= i.solid === 'none';
+      }
+      return null;
+    }
+    case 'say': {
+      const s = evalNum(a.seconds, b, host);
+      if (s === null) return null;
+      for (const i of targets(a, b, host)) i.say = s > 0 && a.text ? { text: host.values.format(a.text), until: host.time + s } : null;
+      return null;
+    }
+    case 'clone':
+      for (const src of targets(a, b, host))
+        host.world.spawn(src.kindId, src.x, src.y, (c) => {
+          c.values = new Map(src.values);
+          c.lookId = src.lookId;
+          c.anim = src.anim ? { ...src.anim } : null;
+          c.still = src.still;
+          c.rotation = src.rotation;
+          c.facing = src.facing;
+          c.tint = src.tint;
+          c.opacity = src.opacity;
+          c.layer = src.layer;
+          c.hidden = src.hidden;
+          c.w = src.w;
+          c.h = src.h;
+          c.hit = { ...src.hit };
+          c.vx = src.vx;
+          c.vy = src.vy;
+        });
+      return null;
+    case 'sendMessage':
+      if (typeof a.name === 'string') host.message(a.name);
+      return null;
+    case 'lockCursor':
+    case 'unlockCursor':
+      host.lockPointer(a.type === 'lockCursor');
+      return null;
+    case 'setCursor':
+      host.setCursor(a.style);
+      return null;
+    case 'cursorLook':
+      if (typeof a.assetId === 'string') host.setCursorLook(a.assetId);
+      return null;
+    case 'playMusic':
+      if (typeof a.assetId === 'string') host.music(a.assetId);
+      return null;
+    case 'stopMusic':
+      host.music(null);
+      return null;
+    case 'stopSounds':
+      host.stopSounds();
+      return null;
+    case 'setVolume': {
+      const v = evalNum(a.percent, b, host);
+      if (v !== null) host.setVolume(Math.min(2, Math.max(0, v / 100)));
+      return null;
+    }
+    case 'zoomCamera': {
+      const v = evalNum(a.percent, b, host);
+      if (v !== null && v > 0) host.camera.zoom = Math.min(8, Math.max(0.1, v / 100));
+      return null;
+    }
+    case 'cameraFollow': {
+      const t = targets(a, b, host)[0];
+      if (t) host.follow(t.id);
+      return null;
+    }
+    case 'cameraMoveTo': {
+      const p = placePoint(a.to, b, host);
+      if (!p) return null;
+      host.follow(null);
+      host.camera.centerOn(p.x, p.y);
+      return null;
+    }
+    case 'flashScreen': {
+      const s = evalNum(a.seconds, b, host);
+      if (s !== null && s > 0) host.flash(a.color, s);
+      return null;
+    }
+    case 'burst': {
+      const n = evalNum(a.count, b, host);
+      const p = placePoint(a.place, b, host);
+      if (n !== null && p) host.world.burst(p.x, p.y, a.color, Math.min(200, Math.max(0, Math.round(n))));
+      return null;
+    }
+    case 'fullscreen':
+      host.fullscreen(a.mode);
+      return null;
+    case 'timeScale': {
+      const v = evalNum(a.percent, b, host);
+      if (v !== null) host.timeScale = Math.min(10, Math.max(0, v / 100));
+      return null;
+    }
+    case 'setText':
+      if (a.target.t === 'ui') host.ui.setText(a.target.id, a.text);
+      return null;
+    case 'setTile': {
+      const p = placePoint(a.place, b, host);
+      const t = evalNum(a.tile, b, host);
+      if (p && t !== null) host.world.setTileAtPoint(p.x, p.y, Math.round(t));
+      return null;
+    }
   }
 }

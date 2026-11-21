@@ -3,6 +3,7 @@ import { createGame, type Game } from '../runtime/game';
 import { attachDomInput } from '../runtime/input';
 import type { AssetInfo, Renderer } from '../runtime/render/renderer';
 import { localStorageRemember } from '../runtime/values';
+import { browserPlatform, lockOnClick } from '../runtime/platform';
 import { parsePayload, payloadAssetInfo, PAYLOAD_ELEMENT_ID, type GamePayload } from './payload';
 
 export const DAMAGED_MESSAGE = 'This game file is damaged.';
@@ -112,7 +113,9 @@ export async function bootPlayer(doc: Document, deps: PlayerDeps): Promise<Game 
     remember: localStorageRemember(project.id, deps.storage ?? win.localStorage),
     assetInfo,
     share: (text) => shareText(win, text, (note) => game.scene.showText(note, 2)),
+    platform: browserPlatform(renderer.canvas, doc.documentElement),
   });
+  doc.body.style.background = project.settings.letterbox;
 
   const fit = () => {
     const size = letterbox({ w: win.innerWidth, h: win.innerHeight }, screen);
@@ -124,10 +127,16 @@ export async function bootPlayer(doc: Document, deps: PlayerDeps): Promise<Game 
 
   const canvas = renderer.canvas;
   canvas.tabIndex = 0;
-  attachDomInput(game.input, canvas, (cx, cy) => {
-    const r = canvas.getBoundingClientRect();
-    return { x: ((cx - r.left) / (r.width || 1)) * screen.w, y: ((cy - r.top) / (r.height || 1)) * screen.h };
-  });
+  attachDomInput(
+    game.input,
+    canvas,
+    (cx, cy) => {
+      const r = canvas.getBoundingClientRect();
+      return { x: ((cx - r.left) / (r.width || 1)) * screen.w, y: ((cy - r.top) / (r.height || 1)) * screen.h };
+    },
+    { blockContextMenu: project.settings.blockContextMenu, scale: () => screen.w / (canvas.getBoundingClientRect().width || screen.w) },
+  );
+  lockOnClick(game, canvas);
   game.render();
 
   const overlay = doc.createElement('button');

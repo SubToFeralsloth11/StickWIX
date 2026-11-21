@@ -3,8 +3,8 @@ import { fileURLToPath } from 'node:url';
 
 /** Fails the build when the exported-game player template is over budget or malformed (T113). */
 
-/** 600 KB budget, counted in KiB (1 KB = 1024 bytes). */
-const BUDGET_KB = 600;
+/** 700 KB budget (raised from 600 KB when the engine grew mouse, animation, tile and effect features), counted in KiB (1 KB = 1024 bytes). */
+const BUDGET_KB = 700;
 const PLACEHOLDER = '<script id="stickwix-game" type="application/json">__STICKWIX_GAME__</script>';
 const file = fileURLToPath(new URL('../public/player-template.html', import.meta.url));
 

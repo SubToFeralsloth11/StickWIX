@@ -2,7 +2,7 @@ import type { Project, Rule, TriggerType } from '../../model/schema';
 import { allRules, ruleStates, type RuleOwner } from '../../model/references';
 import type { RuntimeEvent } from '../types';
 import { runAction } from './actions';
-import { checkConditions } from './conditions';
+import { checkCondition, checkConditions } from './conditions';
 import { evalNum, type Binding, type RuleHost } from './host';
 import { Scheduler } from './scheduler';
 import { matchTrigger, triggerTypesFor } from './triggers';
@@ -25,6 +25,8 @@ interface Live {
 export class Interpreter {
   private byType = new Map<TriggerType, Live[]>();
   private timers: Live[] = [];
+  /** "becomes true" / "while true" rules, checked once per step; `last` remembers each binding's previous answer. */
+  private pollers: { live: Live; last: Map<string, boolean> }[] = [];
   private depth = 0;
   private stack: string[] = [];
   private reported = new Set<string>();
@@ -38,6 +40,7 @@ export class Interpreter {
       const live = { rule, owner, order };
       const t = rule.trigger.type;
       if (t === 'every' || t === 'after') this.timers.push(live);
+      else if (t === 'becomes' || t === 'whileTrue') this.pollers.push({ live, last: new Map() });
       else {
         const list = this.byType.get(t) ?? [];
         list.push(live);
@@ -136,9 +139,26 @@ export class Interpreter {
     }
   }
 
-  /** Runs timers and resumed waits due at the host's current time. */
+  /** True when some rule listens for this trigger type (lets the game skip building events nobody wants). */
+  listens(t: TriggerType) {
+    return this.byType.has(t);
+  }
+
+  /** Runs timers and resumed waits due at the host's current time, then the "becomes / while true" checks. */
   tick() {
     this.depth = 0;
     this.scheduler.runDue(this.host.time);
+    for (const p of this.pollers) {
+      const tr = p.live.rule.trigger;
+      if (tr.type !== 'becomes' && tr.type !== 'whileTrue') continue;
+      for (const b of this.bindingsFor(p.live, null)) {
+        if (this.host.sceneChanging) return;
+        const key = b.self ?? '';
+        const now = checkCondition(tr.cond, b, this.host);
+        const before = p.last.get(key) ?? false;
+        p.last.set(key, now);
+        if (now && (tr.type === 'whileTrue' || !before)) this.runRule(p.live, b);
+      }
+    }
   }
 }

@@ -19,6 +19,7 @@ export const StickerSettings = {
     airControl: z.number().min(0).max(1).default(0.8),
     coyoteMs: z.number().min(0).max(500).default(100),
     jumpBufferMs: z.number().min(0).max(500).default(100),
+    extraJumps: z.number().int().min(0).max(5).default(0),
     keys: MovementKeys.default('both'),
     idleLook: assetRef.default(null),
     walkLook: assetRef.default(null),
@@ -55,6 +56,7 @@ export const StickerSettings = {
     max: z.number().int().min(1).max(100).default(3),
     invincibleMs: z.number().min(0).max(5000).default(1000),
     flash: z.boolean().default(true),
+    showBar: z.boolean().default(false),
   }),
   patrol: z.object({
     distance: z.number().min(0).max(2000).default(96),
@@ -74,10 +76,14 @@ export const StickerSettings = {
     speed: z.number().min(20).max(2000).default(400),
     cooldownMs: z.number().min(0).max(5000).default(300),
     aim: z.enum(['facing', 'mouse']).default('facing'),
+    auto: z.boolean().default(false),
+    count: z.number().int().min(1).max(12).default(1),
+    spread: z.number().min(0).max(180).default(15),
   }),
   clickable: z.object({
     hoverGrow: z.boolean().default(true),
     sound: assetRef.default('builtin:sfx/click'),
+    pointer: z.boolean().default(true),
   }),
   draggable: z.object({
     snapToGrid: z.boolean().default(false),
@@ -91,6 +97,55 @@ export const StickerSettings = {
     lookId: assetRef.default(null),
     fps: z.number().min(1).max(60).default(8),
     loop: z.boolean().default(true),
+  }),
+  breakable: z.object({
+    seconds: z.number().min(0.05).max(30).default(1),
+    button: z.enum(['left', 'right']).default('left'),
+    reach: z.number().min(0).max(3000).default(0),
+    drop: kindRef.default(null),
+    sound: assetRef.default('builtin:sfx/break'),
+    cracks: z.boolean().default(true),
+  }),
+  followMouse: z.object({
+    smoothing: z.number().min(0).max(1).default(0),
+    snap: z.number().int().min(0).max(256).default(0),
+    hideCursor: z.boolean().default(false),
+  }),
+  wander: z.object({
+    speed: z.number().min(5).max(600).default(50),
+    changeEvery: z.number().min(0.2).max(20).default(2),
+    axis: z.enum(['x', 'both']).default('x'),
+  }),
+  spin: z.object({
+    speed: z.number().min(-1440).max(1440).default(90),
+  }),
+  lifetime: z.object({
+    seconds: z.number().min(0.05).max(120).default(2),
+    fade: z.boolean().default(true),
+  }),
+  pointAt: z.object({
+    target: kindRef.default(null),
+    offset: z.number().min(-180).max(180).default(0),
+  }),
+  wrap: z.object({
+    axis: z.enum(['x', 'y', 'both']).default('both'),
+  }),
+  stayInScene: z.object({}),
+  float: z.object({
+    height: z.number().min(1).max(200).default(8),
+    speed: z.number().min(0.1).max(10).default(1),
+  }),
+  spawner: z.object({
+    kind: kindRef.default(null),
+    every: z.number().min(0.1).max(60).default(2),
+    max: z.number().int().min(1).max(200).default(10),
+    spread: z.number().min(0).max(1000).default(0),
+  }),
+  animator: z.object({
+    idle: z.string().default(''),
+    walk: z.string().default(''),
+    jump: z.string().default(''),
+    fall: z.string().default(''),
   }),
 } as const;
 

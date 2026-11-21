@@ -26,12 +26,21 @@ export function describeEvent(e: RecentEvent['event'], p: Project, world: World)
     case 'sceneStart': return 'The scene started';
     case 'timer': return `Timer reached ${Math.round(e.seconds * 10) / 10} seconds`;
     case 'key': return `${keyName(e.key)} was ${e.mode}`;
-    case 'clicked': return `${e.ui ? (p.scenes.flatMap((s) => s.ui).find((u) => u.id === e.id)?.name ?? 'A button') : kind(e.id)} was clicked`;
+    case 'clicked': return `${e.ui ? (p.scenes.flatMap((s) => s.ui).find((u) => u.id === e.id)?.name ?? 'A button') : kind(e.id)} was ${e.button === 'right' ? 'right-clicked' : 'clicked'}`;
     case 'touch': return `${kind(e.a)} touched ${kind(e.b)}`;
     case 'valueChanged': return `${e.objectId ? `${kind(e.objectId)}'s ` : ''}${value(e.valueId)} changed to ${String(e.to)}`;
     case 'created': return `${kind(e.id)} was created`;
     case 'destroyed': return `${kind(e.id)} was destroyed`;
     case 'leavesScene': return `${kind(e.id)} left the scene`;
     case 'sticker': return `${kind(e.id)} ${STICKER_EVENT_PHRASE[e.event]}`;
+    case 'holding': return `${kind(e.id)} was held down for ${Math.round(e.to * 10) / 10} s`;
+    case 'mouse': return `The ${e.button} mouse button was ${e.mode}`;
+    case 'wheel': return `The mouse wheel turned ${e.direction}`;
+    case 'hover': return `The mouse moved ${e.mode === 'enter' ? 'onto' : 'off'} ${kind(e.id)}`;
+    case 'letGo': return `${kind(e.id)} was let go`;
+    case 'frame': return 'A frame passed';
+    case 'message': return `The message "${e.name}" was sent`;
+    case 'untouch': return `${kind(e.a)} stopped touching ${kind(e.b)}`;
+    case 'animEnd': return `${kind(e.id)} finished its animation`;
   }
 }

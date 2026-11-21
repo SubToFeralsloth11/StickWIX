@@ -40,6 +40,15 @@ export function generalise(e: RecentEvent['event'], facts: WorldFacts, onlyThis:
   };
 
   let trigger: Trigger;
+  const pair = (a: string, b: string) => {
+    // Put a lone object (usually the player) first: "When Hero touches any Coin".
+    const ia = facts.instance(a);
+    const ib = facts.instance(b);
+    const aMany = ia ? facts.countOfKind(ia.kindId) > 1 : true;
+    const bMany = ib ? facts.countOfKind(ib.kindId) > 1 : true;
+    const [first, second] = aMany && !bMany ? [b, a] : [a, b];
+    return { a: subject(first), b: subject(second) };
+  };
   switch (e.type) {
     case 'sceneStart':
       trigger = { type: 'sceneStart' };
@@ -51,18 +60,38 @@ export function generalise(e: RecentEvent['event'], facts: WorldFacts, onlyThis:
       trigger = { type: 'key', key: e.key, mode: e.mode };
       break;
     case 'clicked':
-      trigger = e.ui ? { type: 'clicked', target: { t: 'ui', id: e.id } } : { type: 'clicked', target: subject(e.id) };
+      trigger = e.ui ? { type: 'clicked', target: { t: 'ui', id: e.id } } : { type: 'clicked', target: subject(e.id), ...(e.button ? { button: e.button } : {}) };
       break;
-    case 'touch': {
-      // Put a lone object (usually the player) first: "When Hero touches any Coin".
-      const ia = facts.instance(e.a);
-      const ib = facts.instance(e.b);
-      const aMany = ia ? facts.countOfKind(ia.kindId) > 1 : true;
-      const bMany = ib ? facts.countOfKind(ib.kindId) > 1 : true;
-      const [first, second] = aMany && !bMany ? [e.b, e.a] : [e.a, e.b];
-      trigger = { type: 'touches', a: subject(first), b: subject(second) };
+    case 'touch':
+      trigger = { type: 'touches', ...pair(e.a, e.b) };
       break;
-    }
+    case 'untouch':
+      trigger = { type: 'stopsTouching', ...pair(e.a, e.b) };
+      break;
+    case 'holding':
+      trigger = { type: 'holdOn', target: subject(e.id), seconds: { lit: Math.max(0.1, Math.round(e.to * 10) / 10) }, button: e.button };
+      break;
+    case 'mouse':
+      trigger = { type: 'mouse', button: e.button, mode: e.mode };
+      break;
+    case 'wheel':
+      trigger = { type: 'wheel', direction: e.direction };
+      break;
+    case 'hover':
+      trigger = { type: 'hover', target: subject(e.id), mode: e.mode };
+      break;
+    case 'letGo':
+      trigger = { type: 'letGo', target: subject(e.id) };
+      break;
+    case 'animEnd':
+      trigger = { type: 'animEnds', target: subject(e.id) };
+      break;
+    case 'message':
+      trigger = { type: 'message', name: e.name };
+      break;
+    case 'frame':
+      trigger = { type: 'everyFrame' };
+      break;
     case 'valueChanged':
       if (e.objectId) {
         const of = subject(e.objectId);
