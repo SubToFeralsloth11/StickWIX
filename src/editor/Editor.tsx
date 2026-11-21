@@ -3,7 +3,7 @@ import type { Autosave } from '@/storage/autosave';
 import { useEditor, editorStore } from './store';
 import { setUI, useUI } from './ui-state';
 import { useLibrary } from './assets/library';
-import { LEFT_TABS, RIGHT_TABS, type PanelTab, type PanelProps } from './panels';
+import type { PanelProps } from './panels';
 import { SceneCanvas } from './canvas/SceneCanvas';
 import { PlayView } from './play/PlayView';
 import { SaveStatus } from './SaveStatus';
@@ -14,39 +14,21 @@ import { toast } from './toast';
 import { EXPORT_ACTIONS, TOP_BAR_EXTRAS, BACKUP_ACTION } from './topbar';
 import { DeleteConfirm } from './DeleteConfirm';
 import { TourOverlay } from './tour/TourOverlay';
-
-function Tabs({ tabs, active, onPick, props }: { tabs: PanelTab[]; active: string; onPick: (id: string) => void; props: PanelProps }) {
-  const current = tabs.find((t) => t.id === active) ?? tabs[0]!;
-  return (
-    <>
-      <div className="tabs" role="tablist">
-        {tabs.map((t) => {
-          const n = t.badge?.(props) ?? 0;
-          return (
-            <button key={t.id} role="tab" aria-selected={t.id === current.id} className={`tab ${t.id === current.id ? 'on' : ''}`} onClick={() => onPick(t.id)} data-tour={`tab-${t.id}`}>
-              {t.label}
-              {n > 0 && <span className="count">{n}</span>}
-            </button>
-          );
-        })}
-      </div>
-      <div className="panel-body" role="tabpanel">
-        {current.render(props)}
-      </div>
-    </>
-  );
-}
-
-function isTyping(e: KeyboardEvent) {
-  const t = e.target;
-  return t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement || (t instanceof HTMLElement && t.isContentEditable);
-}
+import { Drawer, Rail } from './shell/Rail';
+import { InspectorPane } from './shell/InspectorPane';
+import { SceneTabs } from './shell/SceneTabs';
+import { CommandPalette } from './shell/CommandPalette';
+import { Assistant } from './help/assistant/Assistant';
+import { ShortcutSheet } from './shell/ShortcutSheet';
+import { useShellKeys } from './shell/useShellKeys';
+import { Icon } from './shell/icons';
+import { isTyping, MOD } from './shell/actions';
 
 /** Keyboard shortcuts: undo/redo, delete, duplicate, nudge (editing only, never while typing or playing). */
 function useShortcuts() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (isTyping(e) || useUI.getState().playing) return;
+      if (isTyping(e) || useUI.getState().playing || useUI.getState().overlay) return;
       const st = editorStore.getState();
       const mod = e.metaKey || e.ctrlKey;
       if (mod && e.key.toLowerCase() === 'z') {
@@ -85,6 +67,34 @@ function useShortcuts() {
   }, []);
 }
 
+function GameName({ name, readOnly }: { name: string; readOnly: boolean }) {
+  const [naming, setNaming] = useState(false);
+  if (naming && !readOnly)
+    return (
+      <input
+        className="field title-field"
+        autoFocus
+        defaultValue={name}
+        maxLength={60}
+        aria-label="Game name"
+        onBlur={(e) => {
+          const v = e.currentTarget.value.trim();
+          if (v && v !== name) editorStore.getState().edit('Rename game', (d) => void (d.name = v));
+          setNaming(false);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') e.currentTarget.blur();
+          if (e.key === 'Escape') setNaming(false);
+        }}
+      />
+    );
+  return (
+    <button className="btn ghost title" onClick={() => setNaming(true)} title="Rename">
+      {name}
+    </button>
+  );
+}
+
 export function Editor({ autosave }: { autosave: Autosave }) {
   const project = useEditor((s) => s.project)!;
   const readOnly = useEditor((s) => s.readOnly);
@@ -92,87 +102,87 @@ export function Editor({ autosave }: { autosave: Autosave }) {
   const canRedo = useEditor((s) => s.canRedo());
   const undoLabel = useEditor((s) => s.undoLabel());
   const redoLabel = useEditor((s) => s.redoLabel());
-  const { leftTab, rightTab, playing } = useUI();
+  const playing = useUI((s) => s.playing);
   const lib = useLibrary(project);
-  const [naming, setNaming] = useState(false);
   useShortcuts();
+  useShellKeys();
   useEffect(() => {
     if (lib.error) toast(lib.error, { error: true });
   }, [lib.error]);
+  // Overlays never stay open into Play (the game owns the keyboard there).
+  useEffect(() => {
+    if (playing) setUI({ overlay: null });
+  }, [playing]);
 
   const props: PanelProps = { project, lib };
   return (
-    <div className="editor" data-testid="editor">
-      <div className="topbar">
-        <button className="btn ghost icon" onClick={() => openProject(null)} aria-label="Back to my games" title="My games">
-          <Logo size={28} />
-        </button>
-        {naming && !readOnly ? (
-          <input
-            className="field"
-            autoFocus
-            defaultValue={project.name}
-            maxLength={60}
-            aria-label="Game name"
-            onBlur={(e) => {
-              const v = e.currentTarget.value.trim();
-              if (v && v !== project.name) editorStore.getState().edit('Rename game', (d) => void (d.name = v));
-              setNaming(false);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') e.currentTarget.blur();
-              if (e.key === 'Escape') setNaming(false);
-            }}
-          />
-        ) : (
-          <button className="btn ghost title" onClick={() => setNaming(true)} title="Rename">
-            {project.name}
+    <div className={`editor ${playing ? 'playing' : ''}`} data-testid="editor">
+      <header className="topbar">
+        <div className="tb-side">
+          <button className="btn ghost icon logo-btn" onClick={() => openProject(null)} aria-label="Back to my games" title="My games">
+            <Logo size={30} />
           </button>
-        )}
-        <span className="sep" />
-        <button className="btn ghost icon" disabled={!canUndo || playing} onClick={() => editorStore.getState().undo()} title={undoLabel ? `Undo ${undoLabel} (Ctrl/⌘ Z)` : 'Undo'} aria-label="Undo">
-          ↶
-        </button>
-        <button className="btn ghost icon" disabled={!canRedo || playing} onClick={() => editorStore.getState().redo()} title={redoLabel ? `Redo ${redoLabel} (Shift Ctrl/⌘ Z)` : 'Redo'} aria-label="Redo">
-          ↷
-        </button>
-        <span className="grow" />
-        {playing ? (
-          <button className="btn danger solid" onClick={() => setUI({ playing: false })} data-testid="stop" data-tour="stop">
-            ■ Stop
+          <GameName name={project.name} readOnly={readOnly} />
+          <span className="sep" />
+          <button className="btn ghost icon" disabled={!canUndo || playing} onClick={() => editorStore.getState().undo()} title={undoLabel ? `Undo ${undoLabel} (${MOD} Z)` : 'Undo'} aria-label="Undo">
+            <Icon name="undo" size={18} />
           </button>
-        ) : (
-          <button className="btn go" onClick={() => setUI({ playing: true })} data-testid="play" data-tour="play">
-            ▶ Play
+          <button className="btn ghost icon" disabled={!canRedo || playing} onClick={() => editorStore.getState().redo()} title={redoLabel ? `Redo ${redoLabel} (Shift ${MOD} Z)` : 'Redo'} aria-label="Redo">
+            <Icon name="redo" size={18} />
           </button>
-        )}
-        <span className="grow" />
-        {TOP_BAR_EXTRAS.map((X, i) => (
-          <X key={i} project={project} lib={lib} />
-        ))}
-        {EXPORT_ACTIONS.map((X, i) => (
-          <X key={i} project={project} lib={lib} />
-        ))}
-        <SaveStatus autosave={autosave} onBackup={() => BACKUP_ACTION.run?.(project)} />
-      </div>
+        </div>
+        <div className="tb-center">
+          {playing ? (
+            <button className="btn danger solid play-btn" onClick={() => setUI({ playing: false })} data-testid="stop" data-tour="stop">
+              <Icon name="stop" size={16} /> Stop
+            </button>
+          ) : (
+            <button className="btn go play-btn" onClick={() => setUI({ playing: true })} data-testid="play" data-tour="play">
+              <Icon name="play" size={16} /> Play
+            </button>
+          )}
+        </div>
+        <div className="tb-side end">
+          {!playing && (
+            <button className="search-btn" onClick={() => setUI({ overlay: 'palette' })} data-testid="open-palette" title={`Find anything (${MOD} K)`}>
+              <Icon name="search" size={15} />
+              <span>Find</span>
+              <span className="kbd">{MOD} K</span>
+            </button>
+          )}
+          {!playing && (
+            <button className="btn ghost ask-btn" onClick={() => setUI({ overlay: 'assistant' })} data-testid="open-assistant" title="Type what you want to make and get step-by-step help (F1)">
+              <Icon name="search" size={15} /> How do I…?
+            </button>
+          )}
+          {TOP_BAR_EXTRAS.map((X, i) => (
+            <X key={i} project={project} lib={lib} />
+          ))}
+          {EXPORT_ACTIONS.map((X, i) => (
+            <X key={i} project={project} lib={lib} />
+          ))}
+          <SaveStatus autosave={autosave} onBackup={() => BACKUP_ACTION.run?.(project)} />
+        </div>
+      </header>
       <DeleteConfirm />
       <TourOverlay />
+      <CommandPalette {...props} />
+      <ShortcutSheet />
+      <Assistant />
       {readOnly && (
         <div className="banner" role="alert">
           This game is open in another tab, so it's read-only here. Close the other tab and reload to edit.
         </div>
       )}
-      <div className="work" style={readOnly ? { height: 'calc(100vh - 52px - 36px)' } : undefined}>
-        <aside className="panel left">
-          <Tabs tabs={LEFT_TABS} active={leftTab} onPick={(id) => setUI({ leftTab: id })} props={props} />
-        </aside>
+      <div className="work">
+        <Rail {...props} />
+        <Drawer {...props} />
         <main className="stage">
+          <SceneTabs {...props} />
           <SceneCanvas project={project} lib={lib} />
           {playing && <PlayView project={project} lib={lib} />}
         </main>
-        <aside className="panel right">
-          <Tabs tabs={RIGHT_TABS} active={rightTab} onPick={(id) => setUI({ rightTab: id })} props={props} />
-        </aside>
+        <InspectorPane {...props} />
       </div>
     </div>
   );

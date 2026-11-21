@@ -56,3 +56,9 @@ export async function canvasPoint(page: Page, x: number, y: number) {
 export async function pickOption(page: Page, text: string | RegExp) {
   await page.locator('.pop .opt').filter({ hasText: text }).first().click();
 }
+
+/** Opens a rail section (or the inspector for 'inspect'); rail buttons toggle, so never click an already-open one. */
+export async function openSection(page: Page, id: string) {
+  const btn = page.locator(`[data-tour="tab-${id}"]`).first();
+  if ((await btn.getAttribute('aria-pressed')) !== 'true') await btn.click();
+}

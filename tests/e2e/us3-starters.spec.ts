@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { doc, gameEval, newGame } from './helpers';
+import { doc, gameEval, newGame, openSection } from './helpers';
 
 // T087: quickstart scenario 3 (US3) and SC-002.
 for (const starter of ['platformer', 'topdown', 'clicker'] as const) {
@@ -22,7 +22,7 @@ for (const starter of ['platformer', 'topdown', 'clicker'] as const) {
 
 test('the Patrolling Enemy preset arrives ready to patrol, and a rule preset inserts with blanks to fill', async ({ page }) => {
   await newGame(page, 'blank');
-  await page.locator('[data-tour="tab-presets"]').click();
+  await openSection(page, 'presets');
   await page.getByTestId('preset-patrolling-enemy').dblclick();
   const d = await doc(page);
   const enemy = d.kinds.find((k) => k.stickers.some((s) => s.type === 'patrol'))!;
@@ -34,7 +34,7 @@ test('the Patrolling Enemy preset arrives ready to patrol, and a rule preset ins
   await expect.poll(() => gameEval<number>(page, `const i = g.scene.world.get(${JSON.stringify(placed.id)}); return i ? Math.abs(i.x - ${placed.x}) : 0`)).toBeGreaterThan(8);
   await page.getByTestId('stop').click();
 
-  await page.locator('[data-tour="tab-rules"]').click();
+  await openSection(page, 'rules');
   await page.getByTestId('rule-presets').click();
   await page.locator('.pop .opt').filter({ hasText: 'Collect for points' }).first().click();
   await expect(page.locator('.rule.incomplete')).toHaveCount(1);

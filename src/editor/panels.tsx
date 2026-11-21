@@ -19,6 +19,7 @@ import { ASSET_TOOLS } from './assets/asset-tools';
 import { ArtTools } from './pixel/ArtTools';
 import { WarningsPanel, warningCount } from './warnings/WarningsPanel';
 import { HelpMenu } from './help/HelpMenu';
+import { GameSettingsPanel } from './settings/GameSettingsPanel';
 import { TOP_BAR_EXTRAS } from './topbar';
 
 export interface PanelProps {
@@ -34,22 +35,39 @@ export interface PanelTab {
   render: (p: PanelProps) => ReactNode;
 }
 
-/** Left sidebar: things you put into the world. */
-export const LEFT_TABS: PanelTab[] = [
-  { id: 'art', label: 'Art', render: (p) => <AssetBrowser {...p} /> },
-  { id: 'presets', label: 'Presets', render: (p) => <ObjectPresetPanel {...p} /> },
-  { id: 'tiles', label: 'Tiles', render: (p) => <TilePainter {...p} /> },
-  { id: 'scenes', label: 'Scenes', render: (p) => <ScenesPanel {...p} /> },
+export type SectionGroup = 'build' | 'logic' | 'game' | 'check';
+
+/** A section on the activity rail; opens in the drawer beside it. */
+export interface Section extends PanelTab {
+  group: SectionGroup;
+  /** One line under the drawer title (and in the command palette). */
+  hint: string;
+  /** Shorter label for the narrow rail. */
+  short?: string;
+}
+
+export const SECTION_GROUPS: { id: SectionGroup; label: string }[] = [
+  { id: 'build', label: 'Build' },
+  { id: 'logic', label: 'Logic' },
+  { id: 'game', label: 'Game' },
+  { id: 'check', label: 'Check' },
 ];
 
-/** Right sidebar: what things do. */
-export const RIGHT_TABS: PanelTab[] = [
-  { id: 'inspect', label: 'Inspect', render: (p) => <Inspector {...p} /> },
-  { id: 'rules', label: 'Rules', render: (p) => <RulesPanel {...p} /> },
-  { id: 'values', label: 'Values', render: (p) => <ValuesPanel {...p} /> },
-  { id: 'screen', label: 'Screen', render: (p) => <UILayerEditor {...p} /> },
-  { id: 'warnings', label: 'Warnings', badge: (p) => warningCount(p.project), render: (p) => <WarningsPanel {...p} /> },
+/** Every section on the rail, in rail order (number keys 1-9 follow this order). */
+export const SECTIONS: Section[] = [
+  { id: 'art', group: 'build', label: 'Art', hint: 'Pictures to drag into your scene', render: (p) => <AssetBrowser {...p} /> },
+  { id: 'presets', group: 'build', label: 'Presets', hint: 'Ready-to-play things: heroes, enemies, coins', render: (p) => <ObjectPresetPanel {...p} /> },
+  { id: 'tiles', group: 'build', label: 'Tiles', hint: 'Paint ground, walls and platforms', render: (p) => <TilePainter {...p} /> },
+  { id: 'scenes', group: 'build', label: 'Scenes', hint: 'Levels and screens of your game', render: (p) => <ScenesPanel {...p} /> },
+  { id: 'rules', group: 'logic', label: 'Rules', hint: 'When something happens, do something', render: (p) => <RulesPanel {...p} /> },
+  { id: 'values', group: 'logic', label: 'Values', hint: 'Score, lives, timers and other numbers', render: (p) => <ValuesPanel {...p} /> },
+  { id: 'screen', group: 'logic', label: 'Screen', hint: 'Text, buttons and bars on top of the game', render: (p) => <UILayerEditor {...p} /> },
+  { id: 'game', group: 'game', label: 'Game settings', short: 'Game', hint: 'Screen size, cursor and how the whole game behaves', render: (p) => <GameSettingsPanel {...p} /> },
+  { id: 'warnings', group: 'check', label: 'Warnings', hint: 'Things that need fixing before you share', badge: (p) => warningCount(p.project), render: (p) => <WarningsPanel {...p} /> },
 ];
+
+/** The contextual inspector: always shows what is selected. */
+export const INSPECT_TAB: PanelTab = { id: 'inspect', label: 'Inspect', render: (p) => <Inspector {...p} /> };
 
 register(CANVAS_OVERLAYS, 'ui-layer', UILayerOverlay);
 register(INSPECTOR_SECTIONS, 'kind-rules', KindRulesSection);

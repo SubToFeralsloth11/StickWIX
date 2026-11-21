@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { canvasPoint, doc, gameEval, newGame } from './helpers';
+import { canvasPoint, doc, gameEval, newGame, openSection } from './helpers';
 
 // T044: quickstart scenario 1 (US1).
 test('paint a floor, place a hero and a coin, play, collect, stop restores, undo/redo, one controller', async ({ page }) => {
@@ -18,7 +18,7 @@ test('paint a floor, place a hero and a coin, play, collect, stop restores, undo
   expect(Object.keys((await doc(page)).scenes[0]!.tileLayer.cells).length).toBe(26 * 2);
 
   // Hero with the Platformer Controller.
-  await page.locator('[data-tour="tab-art"]').click();
+  await openSection(page, 'art');
   await page.getByTestId('art-builtin:img/hero').dblclick();
   await page.getByTestId('add-sticker').click();
   await page.getByTestId('add-platformer').click();

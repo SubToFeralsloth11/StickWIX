@@ -1,5 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
-import { doc, newGame, pickOption, valueByName } from './helpers';
+import { doc, newGame, openSection, pickOption, valueByName } from './helpers';
 
 async function blank(page: Page, path: string) {
   await page.locator(`[data-blank="${path}"]`).last().click();
@@ -34,19 +34,19 @@ test('a hand-made clicker with values, rules, a button and on-screen text', asyn
   const cookie = (await doc(page)).kinds[0]!;
 
   // Values: Coins (0), Per Click (1).
-  await page.locator('[data-tour="tab-values"]').click();
+  await openSection(page, 'values');
   await makeValue(page, 'Coins', 0);
   await makeValue(page, 'Per Click', 1);
 
   // Screen: text "Coins: {Coins}" and an "Upgrade" button.
-  await page.locator('[data-tour="tab-screen"]').click();
+  await openSection(page, 'screen');
   await page.getByTestId('add-ui-text').click();
   await page.getByTestId('add-ui-button').click();
   await page.getByLabel('Screen item name').fill('Upgrade');
   await page.getByLabel('Screen item name').press('Tab');
 
   // Rule 1: When [Cookie] is clicked → [Coins] goes up by [Per Click].
-  await page.locator('[data-tour="tab-rules"]').click();
+  await openSection(page, 'rules');
   await newRule(page, 'something is clicked', 'change a value');
   await blank(page, 'trigger.target');
   await pickOption(page, `any ${cookie.name}`);
@@ -109,11 +109,11 @@ test('a hand-made clicker with values, rules, a button and on-screen text', asyn
 
   // Deleting the Cookie Kind warns about the rule that uses it, then marks it broken.
   await page.evaluate((id) => (window as unknown as { __stickwixEditor: { getState(): { select(s: unknown[]): void } } }).__stickwixEditor.getState().select([{ kind: 'kind', id }]), cookie.id);
-  await page.locator('[data-tour="tab-inspect"]').click();
+  await openSection(page, 'inspect');
   await page.getByRole('button', { name: /Delete the .* Kind/ }).click();
   await expect(page.getByRole('heading', { name: /Delete the Kind/ })).toBeVisible();
   await expect(page.getByText(/is clicked/).first()).toBeVisible();
   await page.getByRole('button', { name: 'Delete anyway' }).click();
-  await page.locator('[data-tour="tab-rules"]').click();
+  await openSection(page, 'rules');
   await expect(page.locator('.rule.broken')).toHaveCount(1);
 });

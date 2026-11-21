@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { canvasPoint, doc, editDoc, pickOption } from './helpers';
+import { canvasPoint, doc, editDoc, openSection, pickOption } from './helpers';
 
 // T128: quickstart scenario 7 (US7): first launch tour builds a playable mini-platformer; warnings point at problems.
 test('the guided tour walks a new user through a playable mini-platformer, then warnings show where things are wrong', async ({ page }) => {
@@ -22,12 +22,12 @@ test('the guided tour walks a new user through a playable mini-platformer, then 
   await expect(card).toContainText('Add a hero from Presets');
 
   // 2. A preset hero.
-  await page.locator('[data-tour="tab-presets"]').click();
+  await openSection(page, 'presets');
   await page.getByTestId('preset-platformer-hero').dblclick();
   await expect(card).toContainText('Add a coin');
 
   // 3. A coin from the art, 4. with the Collectible sticker.
-  await page.locator('[data-tour="tab-art"]').click();
+  await openSection(page, 'art');
   await page.getByTestId('art-builtin:img/coin').dblclick();
   await expect(card).toContainText('Stick on a sticker');
   await page.getByTestId('add-sticker').click();
@@ -35,7 +35,7 @@ test('the guided tour walks a new user through a playable mini-platformer, then 
   await expect(card).toContainText('Write a sentence rule');
 
   // 5. When any Coin is collected → Score goes up by 1.
-  await page.locator('[data-tour="tab-rules"]').click();
+  await openSection(page, 'rules');
   await page.getByTestId('new-rule').click();
   await pickOption(page, 'a sticker event happens');
   await pickOption(page, 'change a value');
@@ -69,7 +69,7 @@ test('the guided tour walks a new user through a playable mini-platformer, then 
 
   // Warnings: delete the floor → "has nothing solid to stand on" → Show me where selects the hero.
   await editDoc(page, 'Remove floor', 'd.scenes[0].tileLayer.cells = {};');
-  await page.locator('[data-tour="tab-warnings"]').click();
+  await openSection(page, 'warnings');
   const warn = page.getByTestId('warning').filter({ hasText: 'has nothing solid to stand on' });
   await expect(warn).toBeVisible();
   await warn.getByRole('button', { name: 'Show me where' }).click();
