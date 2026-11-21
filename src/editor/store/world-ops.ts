@@ -243,6 +243,21 @@ export function rectCells(a: { x: number; y: number }, b: { x: number; y: number
   return out;
 }
 
+/** Cells on the outline of the rectangle between two corner cells, each cell once. */
+export function boxCells(a: { x: number; y: number }, b: { x: number; y: number }) {
+  const l = Math.min(a.x, b.x), r = Math.max(a.x, b.x), t = Math.min(a.y, b.y), btm = Math.max(a.y, b.y);
+  const out: { x: number; y: number }[] = [];
+  for (let x = l; x <= r; x++) {
+    out.push({ x, y: t });
+    if (btm !== t) out.push({ x, y: btm });
+  }
+  for (let y = t + 1; y < btm; y++) {
+    out.push({ x: l, y });
+    if (r !== l) out.push({ x: r, y });
+  }
+  return out;
+}
+
 /** Cells on a straight line (brush strokes between two pointer samples never leave gaps). */
 export function lineCells(a: { x: number; y: number }, b: { x: number; y: number }) {
   const out: { x: number; y: number }[] = [];

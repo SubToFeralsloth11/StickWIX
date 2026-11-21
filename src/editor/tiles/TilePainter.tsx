@@ -33,9 +33,9 @@ export function TilePainter({ project, lib }: PanelProps) {
         </select>
       </label>
       <div className="row" style={{ flexWrap: 'wrap' }}>
-        {(['brush', 'rect', 'erase'] as const).map((t) => (
+        {(['brush', 'rect', 'box', 'erase'] as const).map((t) => (
           <button key={t} className={`btn small ${tool === t ? 'on' : ''}`} onClick={() => setUI({ tool: t })}>
-            {t === 'brush' ? '✎ Paint' : t === 'rect' ? '▭ Fill box' : '⌫ Erase'}
+            {t === 'brush' ? '✎ Paint' : t === 'rect' ? '▭ Fill box' : t === 'box' ? '▢ Hollow box' : '⌫ Erase'}
           </button>
         ))}
       </div>

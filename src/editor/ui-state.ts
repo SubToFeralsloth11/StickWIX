@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { Diagnostic } from '@/runtime/types';
 
-export type Tool = 'select' | 'brush' | 'rect' | 'erase' | 'ui';
+export type Tool = 'select' | 'brush' | 'rect' | 'box' | 'erase' | 'ui';
 
 /** Sections that used to live in the left sidebar (things you put into the world). */
 const BUILD_SECTIONS: Record<string, true> = { art: true, presets: true, tiles: true, scenes: true };

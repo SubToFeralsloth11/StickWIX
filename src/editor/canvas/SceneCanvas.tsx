@@ -28,12 +28,13 @@ type Drag =
   | { mode: 'resize'; sx: number; sy: number; id: string; w: number; h: number }
   | { mode: 'rotate'; id: string; cx: number; cy: number }
   | { mode: 'paint'; erase: boolean; last: { x: number; y: number }; cells: Map<string, { x: number; y: number }> }
-  | { mode: 'rect'; from: { x: number; y: number }; to: { x: number; y: number } };
+  | { mode: 'rect'; hollow: boolean; from: { x: number; y: number }; to: { x: number; y: number } };
 
 const TOOLS: { id: Tool; label: string; key: string; title: string }[] = [
   { id: 'select', label: '↖ Select', key: 'v', title: 'Select and move things (V)' },
   { id: 'brush', label: '✎ Paint', key: 'b', title: 'Paint tiles one by one (B)' },
   { id: 'rect', label: '▭ Fill box', key: 'r', title: 'Fill a rectangle with tiles (R)' },
+  { id: 'box', label: '▢ Hollow box', key: 'o', title: 'Draw the outline of a rectangle with tiles (O)' },
   { id: 'erase', label: '⌫ Erase', key: 'e', title: 'Erase tiles (E)' },
 ];
 
@@ -207,9 +208,9 @@ export function SceneCanvas({ project, lib }: { project: Project; lib: Library }
       return;
     }
     if (readOnly) return;
-    if (tool === 'rect') {
+    if (tool === 'rect' || tool === 'box') {
       const c = cellAt(p);
-      setDrag({ mode: 'rect', from: c, to: c });
+      setDrag({ mode: 'rect', hollow: tool === 'box', from: c, to: c });
       return;
     }
     if (tool === 'brush' || tool === 'erase') {
@@ -283,8 +284,8 @@ export function SceneCanvas({ project, lib }: { project: Project; lib: Library }
           toast('Pick a tile set in the Tiles tab first.');
           break;
         }
-        const cells = ops.rectCells(d.from, d.to);
-        edit('Fill tiles', (dr) => ops.paintTiles(dr, sid, cells, tileIndex));
+        const cells = d.hollow ? ops.boxCells(d.from, d.to) : ops.rectCells(d.from, d.to);
+        edit(d.hollow ? 'Draw tile box' : 'Fill tiles', (dr) => ops.paintTiles(dr, sid, cells, tileIndex));
         break;
       }
       case 'pan':
@@ -336,10 +337,12 @@ export function SceneCanvas({ project, lib }: { project: Project; lib: Library }
   const moveDelta = drag?.mode === 'move' && cursor ? { x: cursor.x - drag.sx, y: cursor.y - drag.sy } : null;
   const ghost =
     drag?.mode === 'rect'
-      ? [{ x: Math.min(drag.from.x, drag.to.x), y: Math.min(drag.from.y, drag.to.y), w: Math.abs(drag.to.x - drag.from.x) + 1, h: Math.abs(drag.to.y - drag.from.y) + 1 }]
+      ? drag.hollow
+        ? ops.boxCells(drag.from, drag.to).slice(0, 600).map((c) => ({ x: c.x, y: c.y, w: 1, h: 1 }))
+        : [{ x: Math.min(drag.from.x, drag.to.x), y: Math.min(drag.from.y, drag.to.y), w: Math.abs(drag.to.x - drag.from.x) + 1, h: Math.abs(drag.to.y - drag.from.y) + 1 }]
       : drag?.mode === 'paint'
         ? [...drag.cells.values()].slice(0, 600).map((c) => ({ x: c.x, y: c.y, w: 1, h: 1 }))
-        : (tool === 'brush' || tool === 'erase' || tool === 'rect') && cursor
+        : (tool === 'brush' || tool === 'erase' || tool === 'rect' || tool === 'box') && cursor
           ? [{ ...cellAt(cursor), w: 1, h: 1 }]
           : [];
   const vpClass = `viewport ${drag?.mode === 'pan' || spaceHeld ? 'pan' : tool !== 'select' ? 'paint' : ''}`;
