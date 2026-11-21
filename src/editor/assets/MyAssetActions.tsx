@@ -30,7 +30,7 @@ export function MyAssetActions({ project, assetId, inline }: { project: Project;
 
   return (
     <>
-      <span style={inline ? { display: 'flex', gap: 2 } : { position: 'absolute', top: 2, left: 2, display: 'flex', gap: 2, zIndex: 1 }}>
+      <span className={inline ? undefined : 'tile-actions'} style={inline ? { display: 'flex', gap: 2 } : undefined}>
         {asset.kind === 'image' && asset.source === 'drawn' && (
           <button className="btn small icon" onClick={() => openPixelEditor(asset.id)} title={`Edit drawing "${asset.name}"`} aria-label={`Edit drawing ${asset.name}`}>
             ✎
